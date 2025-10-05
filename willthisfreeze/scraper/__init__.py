@@ -1,0 +1,2 @@
+from willthisfreeze.scraper.c2c_scraper import C2CScraper
+from willthisfreeze.scraper.meteofrance_scraper import MFScraper

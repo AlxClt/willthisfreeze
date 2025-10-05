@@ -1,0 +1,6 @@
+mf_downloads/
+data/
+.venv/
+*pycache*
+*secret*
+notebooks/sandbox.ipynb

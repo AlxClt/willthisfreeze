@@ -1,0 +1,13 @@
+{
+    "dbstring": "sqlite+pysqlite:///data/conditions.db",
+    "parallel": ["initial_load"],
+    "num_processes": 8,
+    "scraping_parameters": {"base_url": "https://api.camptocamp.org/",
+                            "routes_url": "https://api.camptocamp.org/routes",
+                            "outings_url": "https://api.camptocamp.org/outings",
+                            "activities_of_interest": ["snow_ice_mixed","mountain_climbing","ice_climbing"],
+                            "activities_filter": "act=",
+                            "routes_filter": "r=",
+                            "outings_date_filter": "date=",
+                            "num_results_per_page": 100}
+}

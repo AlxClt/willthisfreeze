@@ -1,0 +1,359 @@
+import json
+import warnings
+import datetime
+from functools import partial
+from typing import Optional, Set, List, List, Literal
+import importlib_resources
+
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, select, text
+from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
+
+from sqlalchemy_utils import database_exists
+
+from willthisfreeze.dbutils.schema import (
+    Base, 
+    Routes, 
+    Orientations, 
+    Outings, 
+    Countries,
+    WeatherStation,
+    StationsParameters)
+
+def read_config() -> dict:
+    
+    my_resources = importlib_resources.files("willthisfreeze")
+    data = json.loads(my_resources.joinpath("dbutils", "config.json").read_bytes())
+
+    return data
+
+def create_local_db() -> None:
+
+    config = read_config()
+    dbstring = config['dbstring']
+
+    if database_exists(dbstring):
+        warnings.warn('Database already exist. To recreate it, manually delete the db file before calling create_local_db')
+    else:
+        engine = create_engine(dbstring)
+        Base.metadata.create_all(engine)
+        populate_orientation_table(engine)
+
+def get_obj(Obj, idColumn: str, session: Session, objData: dict):
+
+    obj = session.scalar(
+        select(Obj).where(getattr(Obj, idColumn) == objData[idColumn])
+    )
+    if not obj:
+        obj = Obj(**objData)
+        session.add(obj)
+
+    return obj
+
+# -----------------------
+# Routes data
+# -----------------------
+
+def populate_orientation_table(engine) -> None:
+
+    with Session(engine) as session:
+
+        conf = read_config()
+        
+        for orient in conf['orientations']:
+            session.add(Orientations(orientation=orient))
+        
+        session.commit()
+    
+    return
+
+get_country = partial(get_obj, Countries, "countryName")
+get_orientation = partial(get_obj, Orientations, "orientation")
+get_outings = partial(get_obj, Outings, "outingId")
+get_route = partial(get_obj, Routes, "routeId")
+
+""" 
+def get_country(session: Session, countryData: dict) -> Countries:
+
+    country_obj = session.scalar(
+        select(Countries).where(Countries.countryName == countryData["countryName"])
+    )
+    if not country_obj:
+        country_obj = Countries(**countryData)
+        session.add(country_obj)
+
+    return country_obj
+    
+def get_orientation(session: Session, orientation: str) -> Orientations:
+
+    orientation_obj = session.scalar(
+            select(Orientations).where(Orientations.orientation == orientation)
+        )
+    if not orientation_obj:
+        orientation_obj = Orientations(orientation=orientation)
+        session.add(orientation_obj)
+    
+    return orientation_obj
+
+def get_outings(session: Session, outingData: dict) -> Outings:
+
+    outing_obj = session.scalar(
+        select(Outings).where(Outings.outingId == outingData["outingId"])
+    )
+    if not outing_obj:
+        outing_obj = Outings(**outingData)
+        session.add(outing_obj)
+
+    return outing_obj
+
+def get_route(session: Session, routeData: dict) -> Routes:
+
+    route_obj = session.scalar(
+        select(Routes).where(Routes.routeId == routeData["routeId"])
+    )
+    if not route_obj:
+        route_obj = Routes(**routeData)
+        session.add(route_obj)
+
+    return route_obj """
+
+def insert_route(session: Session,
+                 routeId: int,
+                 lat: float | None = None,
+                 lon: float | None = None,
+                 snow_ice_mixed: int | None = None,
+                 mountain_climbing: int | None = None,
+                 ice_climbing: int | None = None,
+                 elevation_min: int | None = None,
+                 elevation_max: int | None = None,
+                 difficulties_height: int | None = None,
+                 height_diff_difficulties: int | None = None,
+                 glacier: str | None = None,
+                 global_rating: str | None = None,
+                 ice_rating: str | None = None,
+                 mixed_rating: str | None = None,
+                 rock_free_rating: str | None = None, 
+                 orientations: List = [],
+                 outings: List = [],
+                 countries: List =  [],
+                 last_updated: str | None = None
+                 ) -> None:
+
+    # Retrieving orientations
+    orientationsList: List[Orientations] = []
+    for orient in orientations:
+        orientationsList.append(get_orientation(session, orient))
+
+    
+    # Retrieving countries
+    countriesList: List[Countries] = []
+    for countryData in countries:
+        countriesList.append(get_country(session, countryData))
+
+    # Retrieving outings
+    outingsList: List[Outings] = []
+    for outingData in outings:
+        outingsList.append(get_outings(session, outingData))
+
+    route = Routes(
+        routeId=routeId,
+        lat=lat,
+        lon=lon,
+        snow_ice_mixed=snow_ice_mixed,
+        mountain_climbing=mountain_climbing,
+        ice_climbing=ice_climbing,
+        elevation_min=elevation_min,
+        elevation_max=elevation_max,
+        difficulties_height=difficulties_height,
+        height_diff_difficulties=height_diff_difficulties,
+        glacier=glacier,
+        global_rating=global_rating,
+        ice_rating=ice_rating,
+        mixed_rating=mixed_rating,
+        rock_free_rating=rock_free_rating, 
+        orientations=orientationsList,
+        outings=outingsList,
+        countries = countriesList,
+        last_updated = last_updated
+     )
+    
+    session.add(route)
+    session.commit()
+
+def insert_outing(session: Session,
+                  outingId: int,
+                  date: str,
+                  conditions: str | None,
+                  last_updated: str | None = None,
+                  routes: List = []
+                 ) -> None:
+
+    """
+    Mainly used to add an outing to a previously parsed route
+    """
+
+    # Retrieving routes 
+    routesList: List[Routes] = []
+    for routeData in routes:
+        routesList.append(get_route(session, routeData))
+
+    outing = Outings(
+        outingId=outingId,
+        date=date,
+        conditions=conditions,
+        last_updated=last_updated,
+        routes = routesList
+     )
+    
+    session.add(outing)
+    session.commit()
+
+def load_scraped_routes(engine: Engine, min_date: Optional[datetime.datetime]) -> Set[int]:
+    """Return set of route IDs updated after min_date (or all if None)."""
+    query = "SELECT routeId FROM Routes"
+    if min_date:
+        query += " WHERE last_updated >= :min_date AND last_updated IS NOT NULL"
+
+    route_ids: Set[int] = set()
+    with engine.connect() as conn:
+        result = conn.execute(text(query), {"min_date": min_date.strftime("%Y-%m-%d")} if min_date else {})
+        route_ids = {row.routeId for row in result}
+
+    return route_ids
+
+def load_scraped_outings(engine: Engine, min_date: Optional[datetime.datetime], mode: Literal['update_date', 'outing_date']) -> Set[int]:
+    """Return set of route IDs updated after min_date, or outings that happened after min_date"""
+
+    if mode not in {'update_date', 'outing_date'}:
+        raise ValueError("mode must be either 'update_date' or 'outing_date'")
+        
+    query = "SELECT outingId FROM Outings"
+    if min_date: 
+        if mode=='update_date':
+            query += " WHERE last_updated >= :min_date AND last_updated IS NOT NULL"
+        else:
+            query += " WHERE date >= :min_date"
+
+    outings_ids: Set[int] = set()
+    with engine.connect() as conn:
+        result = conn.execute(text(query), {"min_date": min_date.strftime("%Y-%m-%d")} if min_date else {})
+        outings_ids = {row.outingId for row in result}
+
+    return outings_ids
+
+def get_last_outing_date(engine: Engine) -> datetime.datetime:
+    """Return the date of the most recent outing in db"""
+    query = "SELECT MAX(date) FROM Outings"
+
+    with engine.connect() as conn:
+        result_str = conn.execute(text(query)).scalar_one()
+        result = datetime.datetime.strptime(result_str, "%Y-%m-%d")
+        
+    return result
+
+def check_route_existence(engine: Engine, routeId: int) -> bool:
+    """Checks whether the route exists in db"""
+    query = "SELECT routeId FROM Routes WHERE routeId == :routeId"
+
+    with engine.connect() as conn:
+        route = conn.execute(text(query), {"routeId": routeId})
+
+    result = route.first() is not None
+
+    return result
+
+def check_outing_existence(engine: Engine, outingId: int) -> bool:
+
+    """Checks whether the outing exists in db"""
+    query = "SELECT outingId FROM Outings WHERE outingId == :outingId"
+
+    outings_ids: Set[int] = set()
+    with engine.connect() as conn:
+        result = conn.execute(text(query), {"outingId": outingId})
+        outings_ids = {row.outingId for row in result}
+
+    result = (len(outings_ids)>0)
+    return result
+
+# -----------------------
+# Weather data
+# -----------------------
+
+get_weather_station_parameter = partial(get_obj, StationsParameters, "parameterName")
+get_weather_station = partial(get_obj, WeatherStation, "stationId")
+
+def insert_weather_station(session: Session,
+                           stationId: str,
+                           name: str,
+                           dateStart:datetime.datetime,
+                           dateEnd:datetime.datetime,
+                           altitude: int,
+                           lat: float,
+                           lon: float,
+                           lastUpdated:datetime.datetime,
+                           ofInterest: bool = True,
+                           station_parameters: List = []
+                           ) -> None:
+
+    """
+    Adding a weather station
+    """
+
+    # Retrieving parameters 
+    stationParamsList: List[StationsParameters] = []
+    for paramData in station_parameters:
+        stationParamsList.append(get_weather_station_parameter(session, paramData))
+
+    station = WeatherStation(
+        stationId=stationId,
+        name=name,
+        dateStart=dateStart,
+        dateEnd=dateEnd,
+        altitude=altitude,
+        lat=lat,
+        lon=lon,
+        lastUpdated=lastUpdated,
+        ofInterest=ofInterest,
+        parameters = stationParamsList
+     )
+    
+    session.add(station)
+    session.commit()
+
+def insert_weather_station_parameter(session: Session,
+                                     parameterName: str,
+                                     lastUpdated:datetime.datetime,
+                                     parameterId: int | None = None,
+                                     stations: List = []
+                                     ) -> None:
+
+    """
+    Adding a weather station parameter
+    """
+
+    # Retrieving stations 
+    stationsList: List[WeatherStation] = []
+    for stationData in stations:
+        stationsList.append(get_weather_station(session, stationData))
+
+    param = StationsParameters(
+        parameterName=parameterName,
+        parameterId=parameterId,
+        lastUpdated=lastUpdated,
+        stations = stationsList
+     )
+    
+    session.add(param)
+    session.commit()
+
+def load_scraped_stations(engine: Engine) -> Set[str]:
+    """Return set of stations IDs already in db."""
+    query = "SELECT stationId FROM weather_stations"
+
+    stations_ids: Set[str] = set()
+    with engine.connect() as conn:
+        result = conn.execute(text(query))
+        stations_ids = {str(row.stationId) for row in result}
+
+    return stations_ids
