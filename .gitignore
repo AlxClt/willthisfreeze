@@ -3,4 +3,4 @@ data/
 .venv/
 *pycache*
 *secret*
-notebooks/sandbox.ipynb
+willthisfreeze/notebooks/sandbox.ipynb
