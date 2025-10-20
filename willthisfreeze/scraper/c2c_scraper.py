@@ -230,9 +230,9 @@ class C2CScraper:
             else:
                 results = [worker_func(doc) for doc in documents]
 
-            #if i > 1: # FOR DEBUGGING, REMOVE
-            #    logger.info("Hard stopping triggered for debugging")
-            #    break
+            if i > 1: # FOR DEBUGGING, REMOVE
+                logger.info("Hard stopping triggered for debugging")
+                break
             final.extend(results)
 
         return final

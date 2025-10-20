@@ -37,7 +37,7 @@ def create_local_db() -> None:
         warnings.warn('Database already exist. To recreate it, manually delete the db file before calling create_local_db')
     else:
         engine = create_engine(dbstring)
-        Base.metadata.create_all(engine)
+        Base.metadata.create_all(engine, checkfirst=False)
         populate_orientation_table(engine)
 
 def get_obj(Obj, idColumn: str, session: Session, objData: dict):
@@ -69,9 +69,19 @@ def populate_orientation_table(engine) -> None:
     return
 
 get_country = partial(get_obj, Countries, "countryName")
-get_orientation = partial(get_obj, Orientations, "orientation")
 get_outings = partial(get_obj, Outings, "outingId")
 get_route = partial(get_obj, Routes, "routeId")
+
+def get_orientation(session: Session, orientation: str) -> Orientations:
+
+    orientation_obj = session.scalar(
+            select(Orientations).where(Orientations.orientation == orientation)
+        )
+    if not orientation_obj:
+        orientation_obj = Orientations(orientation=orientation)
+        session.add(orientation_obj)
+    
+    return orientation_obj
 
 """ 
 def get_country(session: Session, countryData: dict) -> Countries:
@@ -84,17 +94,6 @@ def get_country(session: Session, countryData: dict) -> Countries:
         session.add(country_obj)
 
     return country_obj
-    
-def get_orientation(session: Session, orientation: str) -> Orientations:
-
-    orientation_obj = session.scalar(
-            select(Orientations).where(Orientations.orientation == orientation)
-        )
-    if not orientation_obj:
-        orientation_obj = Orientations(orientation=orientation)
-        session.add(orientation_obj)
-    
-    return orientation_obj
 
 def get_outings(session: Session, outingData: dict) -> Outings:
 

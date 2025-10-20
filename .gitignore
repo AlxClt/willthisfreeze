@@ -1,6 +1,8 @@
 mf_downloads/
-data/
+data/*
 .venv/
 *pycache*
 *secret*
 willthisfreeze/notebooks/sandbox.ipynb
+
+!*.gitkeep
