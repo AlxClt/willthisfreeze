@@ -1,4 +1,5 @@
 import sys
+import json
 import logging
 import requests
 from typing import Literal, Optional, Set, Dict, List
@@ -151,7 +152,7 @@ class MFScraper():
         logger.info("Scraping %i stations for department %i", len(j), department)
         for s in tqdm(j):
             stationId = s.get('id')
-            if (stationId in already_scraped_ids) or not(s.get('posteOuvert')):
+            if (stationId in already_scraped_ids) or not(s.get('posteOuvert')) or (int(stationId)==73187403):
                 stationsList.append({"stationId": stationId, "skipped": True, "stationInfo": {}})
             else:
                 station_details = self.get_station_metadata(station_id=stationId)
@@ -349,7 +350,7 @@ class MFScraper():
         elif self.mode == "load_stations":
             self._refresh_or_load_stations_metadata(engine=engine,
                                                     cadence = self.cadence,
-                                                    exclude_departments=[])
+                                                    exclude_departments=[list(range(1,73))])
        
         else:
             raise ValueError(f"Unsupported mode: {self.mode}")

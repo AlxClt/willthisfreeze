@@ -83,40 +83,6 @@ def get_orientation(session: Session, orientation: str) -> Orientations:
     
     return orientation_obj
 
-""" 
-def get_country(session: Session, countryData: dict) -> Countries:
-
-    country_obj = session.scalar(
-        select(Countries).where(Countries.countryName == countryData["countryName"])
-    )
-    if not country_obj:
-        country_obj = Countries(**countryData)
-        session.add(country_obj)
-
-    return country_obj
-
-def get_outings(session: Session, outingData: dict) -> Outings:
-
-    outing_obj = session.scalar(
-        select(Outings).where(Outings.outingId == outingData["outingId"])
-    )
-    if not outing_obj:
-        outing_obj = Outings(**outingData)
-        session.add(outing_obj)
-
-    return outing_obj
-
-def get_route(session: Session, routeData: dict) -> Routes:
-
-    route_obj = session.scalar(
-        select(Routes).where(Routes.routeId == routeData["routeId"])
-    )
-    if not route_obj:
-        route_obj = Routes(**routeData)
-        session.add(route_obj)
-
-    return route_obj """
-
 def insert_route(session: Session,
                  routeId: int,
                  lat: float | None = None,
@@ -208,7 +174,7 @@ def insert_outing(session: Session,
     session.add(outing)
     session.commit()
 
-def load_scraped_routes(engine: Engine, min_date: Optional[datetime.datetime]) -> Set[int]:
+def load_scraped_routes_ids(engine: Engine, min_date: Optional[datetime.datetime]) -> Set[int]:
     """Return set of route IDs updated after min_date (or all if None)."""
     query = "SELECT routeId FROM Routes"
     if min_date:
@@ -221,7 +187,7 @@ def load_scraped_routes(engine: Engine, min_date: Optional[datetime.datetime]) -
 
     return route_ids
 
-def load_scraped_outings(engine: Engine, min_date: Optional[datetime.datetime], mode: Literal['update_date', 'outing_date']) -> Set[int]:
+def load_scraped_outings_ids(engine: Engine, min_date: Optional[datetime.datetime], mode: Literal['update_date', 'outing_date']) -> Set[int]:
     """Return set of route IDs updated after min_date, or outings that happened after min_date"""
 
     if mode not in {'update_date', 'outing_date'}:

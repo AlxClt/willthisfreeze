@@ -13,8 +13,8 @@ from sqlalchemy import create_engine, text, Engine
 from willthisfreeze.dbutils import (
     insert_route, 
     insert_outing,
-    load_scraped_outings, 
-    load_scraped_routes, 
+    load_scraped_outings_ids, 
+    load_scraped_routes_ids, 
     check_route_existence, 
     get_last_outing_date
 )
@@ -283,12 +283,12 @@ class C2CScraper:
             # load_scraped_routes cannot get out of the loop because some routes cover sevral activities, so the list of ids must be updated before each iteration
             if target=='routes':
                 # All routes in DB
-                scraped_ids = load_scraped_routes(
+                scraped_ids = load_scraped_routes_ids(
                     engine=engine, min_date=datetime.datetime(2000, 1, 1)
                 )
             else:
                 # All outings starting after self.update_date_start - 30 days 
-                scraped_ids = load_scraped_outings(
+                scraped_ids = load_scraped_outings_ids(
                     engine=engine, min_date=self.update_date_start - datetime.timedelta(days=30), mode='outing_date'
                 )
             logger.info("Loaded %d scraped %s from DB", len(scraped_ids), target)
