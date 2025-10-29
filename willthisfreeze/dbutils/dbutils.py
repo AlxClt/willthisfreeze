@@ -5,7 +5,7 @@ from functools import partial
 from typing import Optional, Set, List, List, Literal
 import importlib_resources
 
-from sqlalchemy import Engine
+from sqlalchemy import Engine, CursorResult
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
@@ -27,6 +27,11 @@ def read_config() -> dict:
     data = json.loads(my_resources.joinpath("dbutils", "config.json").read_bytes())
 
     return data
+
+def get_engine(config: dict) -> Engine:
+    dbstring = config['dbstring']
+    engine = create_engine(dbstring)
+    return engine
 
 def create_local_db() -> None:
 
@@ -186,6 +191,15 @@ def load_scraped_routes_ids(engine: Engine, min_date: Optional[datetime.datetime
         route_ids = {row.routeId for row in result}
 
     return route_ids
+
+
+def load_routes(engine: Engine) -> CursorResult[Routes]:
+    """Return all routes"""
+    query = "SELECT * FROM Routes"
+    with engine.connect() as conn:
+        result = conn.execute(text(query))
+
+    return result
 
 def load_scraped_outings_ids(engine: Engine, min_date: Optional[datetime.datetime], mode: Literal['update_date', 'outing_date']) -> Set[int]:
     """Return set of route IDs updated after min_date, or outings that happened after min_date"""

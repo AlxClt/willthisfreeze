@@ -6,6 +6,8 @@ from willthisfreeze.dbutils.dbutils import (
     load_scraped_routes_ids, 
     check_route_existence, 
     get_last_outing_date,
-    load_scraped_outings_ids
+    load_scraped_outings_ids,
+    load_routes,
+    get_engine
 )
 
