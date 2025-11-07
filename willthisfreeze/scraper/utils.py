@@ -2,8 +2,24 @@ import json
 import math
 import requests
 from typing import List
+from pyproj import Transformer
 
 import importlib_resources
+
+def to_latlon(x, y, source_epsg=3857):
+    """
+    Convert projected coordinates (x, y) to latitude and longitude.
+
+    Parameters:
+        x, y: coordinates in meters
+        source_epsg: EPSG code of the input projection (default UTM zone 33N)
+
+    Returns:
+        (latitude, longitude) in decimal degrees
+    """
+    transformer = Transformer.from_crs(f"EPSG:{source_epsg}", "EPSG:4326", always_xy=True)
+    lon, lat = transformer.transform(x, y)
+    return lat, lon
 
 def filter_area(area: dict) -> bool:
     if area.get('area_type', '')=='country':
@@ -25,8 +41,10 @@ def get_geo_coordinates(routeData: dict) -> tuple:
             coords = json.loads(geom).get("coordinates")
         except (json.JSONDecodeError, TypeError):
             coords = None
-
-    lon, lat = coords if coords else (None, None)
+    if coords:
+        lat, lon = to_latlon(*coords)
+    else:
+        lat, lon = None, None
 
     return lon, lat
 
@@ -96,3 +114,5 @@ class C2CApiCallIterator:
 
         self.current_loop += 1
         return callresult
+
+

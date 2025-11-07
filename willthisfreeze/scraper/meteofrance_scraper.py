@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Engine
 
 
-from willthisfreeze.dbutils.dbutils import load_scraped_stations, insert_weather_station
+from willthisfreeze.dbutils.dbutils import load_scraped_stations_ids, insert_weather_station
 
 
 # -----------------------
@@ -312,7 +312,7 @@ class MFScraper():
         """
         Scrapes all weather stations providing data from the selected granularity metadata 
         """
-        already_scraped_stations = load_scraped_stations(engine=engine)
+        already_scraped_stations = load_scraped_stations_ids(engine=engine)
         logger.info("loaded %i stations from db", len(already_scraped_stations))
         scraped_dpt, skipped_dpt = 0, 0
         written, skipped = 0,0

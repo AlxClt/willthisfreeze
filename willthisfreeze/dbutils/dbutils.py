@@ -192,12 +192,13 @@ def load_scraped_routes_ids(engine: Engine, min_date: Optional[datetime.datetime
 
     return route_ids
 
-
-def load_routes(engine: Engine) -> CursorResult[Routes]:
+def load_routes(engine: Engine, countryId: Optional[int]=None) -> CursorResult[Routes]:
     """Return all routes"""
-    query = "SELECT * FROM Routes"
+    query = "SELECT * FROM Routes "
+    if countryId:
+        query += "LEFT JOIN countries_mapping cm ON Routes.routeId=cm.routeId WHERE cm.countryId=:countryId"
     with engine.connect() as conn:
-        result = conn.execute(text(query))
+        result = conn.execute(text(query), {"countryId": countryId} if countryId else {})
 
     return result
 
@@ -326,7 +327,7 @@ def insert_weather_station_parameter(session: Session,
     session.add(param)
     session.commit()
 
-def load_scraped_stations(engine: Engine) -> Set[str]:
+def load_scraped_stations_ids(engine: Engine) -> Set[str]:
     """Return set of stations IDs already in db."""
     query = "SELECT stationId FROM weather_stations"
 
@@ -336,3 +337,13 @@ def load_scraped_stations(engine: Engine) -> Set[str]:
         stations_ids = {str(row.stationId) for row in result}
 
     return stations_ids
+
+def load_stations(engine: Engine) -> CursorResult[WeatherStation]:
+    """Return weather stations in db."""
+    query = "SELECT * FROM weather_stations"
+
+    with engine.connect() as conn:
+        result = conn.execute(text(query))
+
+    return result
+
