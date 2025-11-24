@@ -42,6 +42,10 @@ class Routes(Base):
     outings: Mapped[List["Outings"]] = relationship(
         secondary="outings_mapping", back_populates='routes'
     )
+
+    stations: Mapped[List["WeatherStation"]] = relationship(
+            secondary="stations_parameters_mapping", back_populates='parameters'
+        )
     
     def __repr__(self):
          return f"Route(id={self.routeId}, link=https://www.camptocamp.org/routes/{self.routeId}, count_outings={len(self.outings)})"
@@ -126,6 +130,9 @@ class WeatherStation(Base):
     parameters: Mapped[List["StationsParameters"]] = relationship(
         secondary="stations_parameters_mapping", back_populates='stations'
     )
+    routes: Mapped[List["Routes"]] = relationship(
+        secondary="route_stations_mapping", back_populates='stations'
+    )
 
     def __repr__(self):
         return f"WeatherStation(id={self.stationId}, name={self.name}, altitude={self.altitude})"
@@ -152,3 +159,15 @@ stations_parameters_mapping = Table(
     Column("stationId", ForeignKey("weather_stations.stationId"), primary_key=True),
     Column("parameterId", ForeignKey("stations_parameters.parameterId"), primary_key=True),
 )
+
+# -----------------------
+# Link table
+# -----------------------
+
+route_stations_mapping = Table(
+    "route_stations_mapping",
+    Base.metadata,
+    Column("stationId", ForeignKey("weather_stations.stationId"), primary_key=True),
+    Column("routeId", ForeignKey("routes.routeId"), primary_key=True),
+)
+
