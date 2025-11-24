@@ -1,24 +1,62 @@
+import sys
+import logging
+from tqdm import tqdm
 from typing import List
-from sqlalchemy import CursorResult, Engine, text
+from sqlalchemy.orm import Session
 
-from willthisfreeze.datapreparation.utils import bounding_box
-from willthisfreeze.dbutils import load_routes, load_stations
+from willthisfreeze.datapreparation.utils import bounding_box, haversine_distance
+from willthisfreeze.dbutils import load_routes, read_config, get_engine, load_routes
 from willthisfreeze.dbutils.schema import Routes, WeatherStation
 
-def load_stations_within_radius(engine: Engine, route_lon: float, route_lat: float, radius: float) -> CursorResult[WeatherStation]:
-    """Return weather stations in db within a radius of radius km from the given route coordinates"""
-    query = "SELECT * FROM weather_stations WHERE lat BETWEEN :min_lat AND :max_lat AND lon BETWEEN :min_lon AND :max_lon"
+# -----------------------
+# Logging configuration
+# -----------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+    stream=sys.stdout
+)
+logger = logging.getLogger("StationsAttribution")
 
-    min_lat, max_lat, min_lon, max_lon = bounding_box(coord=(route_lat, route_lon), max_distance_km=radius)
+def load_stations_within_radius(session: Session, lat: float, lon: float, radius: float):
+    """Return ORM WeatherStation objects within bounding box."""
+    min_lat, max_lat, min_lon, max_lon = bounding_box(coord=(lat, lon), max_distance_km=radius)
 
-    with engine.connect() as conn:
-        result = conn.execute(text(query), {"min_lat": min_lat, "min_lon": min_lon, "max_lat": max_lat, "max_lon": max_lon})
-    return result
+    return session.query(WeatherStation).filter(
+        WeatherStation.lat.between(min_lat, max_lat),
+        WeatherStation.lon.between(min_lon, max_lon),
+    ).all()
 
-def filter_stations(route:Routes, stations: List[WeatherStation]) -> List[WeatherStation]:
-    # computes the distance and keeps the top 10
-    if len(stations)<=10:
-        return stations
-    else:
-        res = list(filter())
+
+def filter_stations(route: Routes, stations: List[WeatherStation], nkeep=10) -> List[int]:
+    """Compute distance to route and return closest station IDs."""
+    return [
+        station.stationId
+        for station in sorted(
+            stations,
+            key=lambda s: haversine_distance((route.lat, route.lon), (s.lat, s.lon))
+        )[:nkeep]
+    ]
+
+
+def update_routes_station_mapping(session: Session, route: Routes, station_ids: List[int]) -> None:
+    stations = session.query(WeatherStation).filter(WeatherStation.stationId.in_(station_ids)).all()
+    route.stations = stations
+    session.commit()
+
+
+def main_weather_stations_attribution():
+    conf = read_config()
+    engine = get_engine(conf)
+
+    with Session(engine) as session:
+        routes = load_routes(session, countryId=14274)
+
+        logger.info("Attributing weather stations to the routes...")
+        for route in tqdm(routes):
+            stations = load_stations_within_radius(session, route.lat, route.lon, radius=20)
+            station_ids = filter_stations(route, stations)
+            update_routes_station_mapping(session, route, station_ids)
+        logger.info("Weather stations attribution completed")
+
 

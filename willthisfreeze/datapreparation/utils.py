@@ -28,9 +28,6 @@ def bounding_box(coord, max_distance_km):
 
     return (min_lat, max_lat, min_lon, max_lon)
 
-
-import math
-
 def haversine_distance(coord1, coord2):
     """
     Calculate the great-circle distance between two points on Earth 

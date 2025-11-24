@@ -44,7 +44,7 @@ class Routes(Base):
     )
 
     stations: Mapped[List["WeatherStation"]] = relationship(
-            secondary="stations_parameters_mapping", back_populates='parameters'
+            secondary="route_stations_mapping", back_populates='routes'
         )
     
     def __repr__(self):

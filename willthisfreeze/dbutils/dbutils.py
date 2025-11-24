@@ -107,6 +107,7 @@ def insert_route(session: Session,
                  orientations: List = [],
                  outings: List = [],
                  countries: List =  [],
+                 weather_stations: List =  [],
                  last_updated: str | None = None
                  ) -> None:
 
@@ -125,6 +126,11 @@ def insert_route(session: Session,
     outingsList: List[Outings] = []
     for outingData in outings:
         outingsList.append(get_outings(session, outingData))
+
+    # Retrieving stations
+    stationsList: List[WeatherStation] = []
+    for stationData in weather_stations:
+        stationsList.append(get_weather_station(session, stationData))
 
     route = Routes(
         routeId=routeId,
@@ -145,6 +151,7 @@ def insert_route(session: Session,
         orientations=orientationsList,
         outings=outingsList,
         countries = countriesList,
+        stations = stationsList,
         last_updated = last_updated
      )
     
@@ -192,15 +199,19 @@ def load_scraped_routes_ids(engine: Engine, min_date: Optional[datetime.datetime
 
     return route_ids
 
-def load_routes(engine: Engine, countryId: Optional[int]=None) -> CursorResult[Routes]:
-    """Return all routes"""
-    query = "SELECT * FROM Routes "
-    if countryId:
-        query += "LEFT JOIN countries_mapping cm ON Routes.routeId=cm.routeId WHERE cm.countryId=:countryId"
-    with engine.connect() as conn:
-        result = conn.execute(text(query), {"countryId": countryId} if countryId else {})
-
-    return result
+def load_routes(session: Session, countryId: Optional[int] = None) -> List[Routes]:
+    """
+    Returns ORM objects for Routes filtered by country Id if provided
+    """
+    if not countryId:
+        return session.query(Routes).all()
+    
+    return (
+        session.query(Routes)
+        .join(Routes.countries)
+        .filter(Countries.countryId == countryId)
+        .all()
+    )
 
 def load_scraped_outings_ids(engine: Engine, min_date: Optional[datetime.datetime], mode: Literal['update_date', 'outing_date']) -> Set[int]:
     """Return set of route IDs updated after min_date, or outings that happened after min_date"""
@@ -273,7 +284,8 @@ def insert_weather_station(session: Session,
                            lon: float,
                            lastUpdated:datetime.datetime,
                            ofInterest: bool = True,
-                           station_parameters: List = []
+                           station_parameters: List = [],
+                           routes: List = []
                            ) -> None:
 
     """
@@ -285,6 +297,11 @@ def insert_weather_station(session: Session,
     for paramData in station_parameters:
         stationParamsList.append(get_weather_station_parameter(session, paramData))
 
+    # Retrieving associated routes 
+    routesList: List[Routes] = []
+    for routeData in routes:
+        stationParamsList.append(get_route(session, routeData))
+
     station = WeatherStation(
         stationId=stationId,
         name=name,
@@ -295,7 +312,8 @@ def insert_weather_station(session: Session,
         lon=lon,
         lastUpdated=lastUpdated,
         ofInterest=ofInterest,
-        parameters = stationParamsList
+        parameters = stationParamsList,
+        routes = routesList
      )
     
     session.add(station)
