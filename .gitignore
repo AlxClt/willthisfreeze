@@ -6,3 +6,4 @@ data/*
 willthisfreeze/notebooks/sandbox.ipynb
 todo.md
 !*.gitkeep
+notebooks/sandbox.ipynb

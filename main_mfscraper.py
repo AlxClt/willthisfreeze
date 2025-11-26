@@ -24,7 +24,7 @@ logger = logging.getLogger("MFScraper")
 if __name__ == "__main__":
 
     p = argparse.ArgumentParser()
-    p.add_argument("--mode", required=False, help="scraping mode", choices=["load_stations", "update_weather_hist"])
+    p.add_argument("--mode", required=False, help="scraping mode", choices=["load_stations", "update_weather_hist"], default="update_weather_hist")
     args = p.parse_args()
 
     conf = read_config()

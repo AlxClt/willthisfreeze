@@ -8,7 +8,7 @@ import importlib_resources
 from sqlalchemy import Engine, CursorResult
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, select, text
-from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
+from sqlalchemy.orm.query import Query
 
 from sqlalchemy_utils import database_exists
 
@@ -199,18 +199,18 @@ def load_scraped_routes_ids(engine: Engine, min_date: Optional[datetime.datetime
 
     return route_ids
 
-def load_routes(session: Session, countryId: Optional[int] = None) -> List[Routes]:
+def load_routes(session: Session, countryId: Optional[int] = None) -> Query:
     """
     Returns ORM objects for Routes filtered by country Id if provided
+    call .all() on the result to retrieve it if you don't need to query it further
     """
     if not countryId:
-        return session.query(Routes).all()
+        return session.query(Routes)
     
     return (
         session.query(Routes)
         .join(Routes.countries)
         .filter(Countries.countryId == countryId)
-        .all()
     )
 
 def load_scraped_outings_ids(engine: Engine, min_date: Optional[datetime.datetime], mode: Literal['update_date', 'outing_date']) -> Set[int]:
