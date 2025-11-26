@@ -4,5 +4,5 @@ data/*
 *pycache*
 *secret*
 willthisfreeze/notebooks/sandbox.ipynb
-
+todo.md
 !*.gitkeep

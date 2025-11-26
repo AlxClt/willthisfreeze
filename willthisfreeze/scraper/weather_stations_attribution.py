@@ -4,9 +4,16 @@ from tqdm import tqdm
 from typing import List
 from sqlalchemy.orm import Session
 
-from willthisfreeze.datapreparation.utils import bounding_box, haversine_distance
+from willthisfreeze.scraper.utils import bounding_box, haversine_distance
 from willthisfreeze.dbutils import load_routes, read_config, get_engine, load_routes
 from willthisfreeze.dbutils.schema import Routes, WeatherStation
+
+
+# -----------------------
+# This script is a batch job marking the closest weather stations to be used to get weather history for each route
+#     pipeline: c2c_scraper -> weather_stations_attribution -> meteofrance_scraper
+# -----------------------
+
 
 # -----------------------
 # Logging configuration
@@ -44,6 +51,11 @@ def update_routes_station_mapping(session: Session, route: Routes, station_ids: 
     route.stations = stations
     session.commit()
 
+def update_weather_stations_interest_flag():
+    """
+    batch update the interest flag marking stations for which weather history should be scraped
+    """
+    return
 
 def main_weather_stations_attribution():
     conf = read_config()
