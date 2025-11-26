@@ -44,7 +44,7 @@ class MFScraper():
             raise ValueError("mode must be either 'load_stations' or 'update_weather_hist'")
 
         # base
-        self.API_BASE_URL = "https://public-api.meteofrance.fr/public/DPClim/v1"  # example base; replace with your portal base
+        self.API_BASE_URL = "https://public-api.meteofrance.fr/public/DPClim/v1"  
         self.API_KEY: str = config["meteoapitoken"]
         self.DBSTRING: str = config["dbstring"]
 
@@ -305,21 +305,25 @@ class MFScraper():
         df = self.combine_csvs(downloaded_files, out_csv)
         logger.info(f"Combined data saved to {out_csv}. Rows: {len(df)}")
 
-    def _refresh_or_load_stations_metadata(self, 
-                                           engine: Engine,
-                                           cadence:Literal["horaire","quotidienne","6m","infrahoraire-6m"] = "quotidienne",
-                                           exclude_departments:list=[]) -> None:
+    def _load_stations_metadata(self,
+                                engine: Engine,
+                                cadence:Literal["horaire","quotidienne","6m","infrahoraire-6m"] = "quotidienne"
+                                ) -> None:
         """
         Scrapes all weather stations providing data from the selected granularity metadata 
         """
         already_scraped_stations = load_scraped_stations_ids(engine=engine)
+        already_scraped_department = {int(s[:2]) for s in already_scraped_stations}
+
         logger.info("loaded %i stations from db", len(already_scraped_stations))
+        logger.info("loaded %i scraped departments from db", len(already_scraped_department))
+
         scraped_dpt, skipped_dpt = 0, 0
         written, skipped = 0,0
         logger.info("Scraping weather stations metadata...")
         for dept in range(1,96):
-            if dept in exclude_departments:
-                logger.info("Skipping department %i as instructed", dept)
+            if dept in already_scraped_department:
+                logger.info("Skipping department %i", dept)
                 skipped_dpt += 1 
             else:
                 stations = self.scrape_stations_metadata(cadence=cadence, department=dept, already_scraped_ids=already_scraped_stations)
@@ -331,8 +335,11 @@ class MFScraper():
                             #logging.info("Skipping station with id %s", stationInfo["stationId"])
                             skipped+=1
                         else:
-                            insert_weather_station(session=session, **stationInfo["stationInfo"])
+                            insert_weather_station(session=session, commit=False, **stationInfo["stationInfo"])
                             written += 1
+                    # Batch writing of weather stations ensuring that all the stations from a given department are written together. 
+                    # This is important for the restart logic, which considers that if stations from a given department are already in db, the whole department stations have been scraped and it can be skipped
+                    session.commit()
             # FOR DEBUGGING ONLY
             #if dept>=3:
             #    break
@@ -348,9 +355,8 @@ class MFScraper():
         if self.mode == "update_weather_hist":
             pass
         elif self.mode == "load_stations":
-            self._refresh_or_load_stations_metadata(engine=engine,
-                                                    cadence = self.cadence,
-                                                    exclude_departments=[list(range(1,73))])
+            self._load_stations_metadata(engine=engine,
+                                         cadence = self.cadence)
        
         else:
             raise ValueError(f"Unsupported mode: {self.mode}")

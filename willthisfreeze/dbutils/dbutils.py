@@ -285,8 +285,8 @@ def insert_weather_station(session: Session,
                            lastUpdated:datetime.datetime,
                            ofInterest: bool = True,
                            station_parameters: List = [],
-                           routes: List = []
-                           ) -> None:
+                           routes: List = [],
+                           commit: bool = True) -> None:
 
     """
     Adding a weather station
@@ -317,7 +317,8 @@ def insert_weather_station(session: Session,
      )
     
     session.add(station)
-    session.commit()
+    if commit:
+        session.commit()
 
 def insert_weather_station_parameter(session: Session,
                                      parameterName: str,
