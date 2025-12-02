@@ -1,5 +1,6 @@
 mf_downloads/
 data/*
+test/*
 .venv/
 *pycache*
 *secret*
