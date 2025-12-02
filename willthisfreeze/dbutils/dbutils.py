@@ -1,9 +1,7 @@
-import json
 import warnings
 import datetime
 from functools import partial
 from typing import Optional, Set, List, List, Literal
-import importlib_resources
 
 from sqlalchemy import Engine, CursorResult
 from sqlalchemy.orm import Session
@@ -12,6 +10,7 @@ from sqlalchemy.orm.query import Query
 
 from sqlalchemy_utils import database_exists
 
+from willthisfreeze.config import read_config
 from willthisfreeze.dbutils.schema import (
     Base, 
     Routes, 
@@ -20,13 +19,6 @@ from willthisfreeze.dbutils.schema import (
     Countries,
     WeatherStation,
     StationsParameters)
-
-def read_config() -> dict:
-    
-    my_resources = importlib_resources.files("willthisfreeze")
-    data = json.loads(my_resources.joinpath("dbutils", "config.json").read_bytes())
-
-    return data
 
 def get_engine(config: dict) -> Engine:
     dbstring = config['dbstring']

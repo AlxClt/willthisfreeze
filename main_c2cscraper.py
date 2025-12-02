@@ -3,7 +3,7 @@ import logging
 import sys
 import time
 
-from willthisfreeze.scraper.utils import read_config
+from willthisfreeze.config import read_config
 from willthisfreeze.scraper import C2CScraper
 from willthisfreeze.dbutils import create_local_db
 

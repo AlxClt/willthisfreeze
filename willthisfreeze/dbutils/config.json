@@ -1,4 +1,0 @@
-{
-    "dbstring": "sqlite+pysqlite:///data/conditions.db",
-    "orientations": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-}

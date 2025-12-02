@@ -1,5 +1,4 @@
 import sys
-import json
 import logging
 import requests
 from typing import Literal, Optional, Set, Dict, List

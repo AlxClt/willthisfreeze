@@ -1,8 +1,9 @@
 {
     "dbstring": "sqlite+pysqlite:///data/conditions.db",
+    "orientations": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
     "parallel": ["initial_load"],
     "num_processes": 8,
-    "scraping_parameters": {"base_url": "https://api.camptocamp.org/",
+    "c2c_scraper_parameters": {"base_url": "https://api.camptocamp.org/",
                             "routes_url": "https://api.camptocamp.org/routes",
                             "outings_url": "https://api.camptocamp.org/outings",
                             "activities_of_interest": ["snow_ice_mixed","mountain_climbing","ice_climbing"],

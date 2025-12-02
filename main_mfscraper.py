@@ -4,7 +4,7 @@ import sys
 import time
 import datetime as dt
 
-from willthisfreeze.scraper.utils import read_config, read_secret
+from willthisfreeze.config import read_config, read_secret
 from willthisfreeze.scraper import MFScraper
 
 # -----------------------
