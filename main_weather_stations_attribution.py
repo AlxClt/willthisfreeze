@@ -3,7 +3,7 @@ import time
 import logging
 import argparse
 
-from willthisfreeze.scraper.weather_stations_attribution import main_weather_stations_attribution
+from willthisfreeze.scraper import weather_stations_attribution
 
 # -----------------------
 # Logging configuration
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     logger.info("Starting weather stations attribution is mode %s", args.mode)
     start_time = time.time()
 
-    main_weather_stations_attribution(mode=args.mode)
+    weather_stations_attribution(mode=args.mode)
 
     logger.info("Finished in %.2f seconds", time.time() - start_time)
 

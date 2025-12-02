@@ -84,7 +84,7 @@ def update_weather_stations_interest_flag(session):
     session.commit()
     
 
-def main_weather_stations_attribution(mode: Literal["update", "reset"] = "update")  -> None:
+def weather_stations_attribution(mode: Literal["update", "reset"] = "update")  -> None:
     """
     :param mode: update will add weather stations to routes without attributed stations, "reset" will erase all existing links and restart the attribution
     :type mode: Literal["update", "reset"]

@@ -26,16 +26,15 @@ if __name__ == "__main__":
         prog="c2cScraper",
         description="Scrapes camptocamp.org routes and outings data",
     )
-    parser.add_argument("mode", choices=["initial_load", "update"])
+    parser.add_argument("mode", choices=["init", "update"])
 
     args = parser.parse_args()
 
     conf = read_config()
-
     logger.info("Starting scraper in %s mode", args.mode)
     start_time = time.time()
 
-    if args.mode=='initial_load':
+    if args.mode=='init':
         # initial_load can be called without existing db. If db exists, this will have no effect
         create_local_db()
 

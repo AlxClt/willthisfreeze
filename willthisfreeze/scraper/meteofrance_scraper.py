@@ -33,14 +33,14 @@ class MFScraper():
 
     def __init__(self, 
                  config: dict, 
-                 mode: Optional[Literal["load_stations", "update_weather_hist"]] = None):
+                 mode: Optional[Literal["init", "update"]] = None):
 
-        self.mode = mode or 'update_weather_hist'
+        self.mode = mode or 'update'
         self.cadence: Literal["horaire","quotidienne","6m","infrahoraire-6m"] = "quotidienne" #restricting this parameter
         self.update_date = dt.datetime.now()
 
-        if self.mode not in {"load_stations", "update_weather_hist"}:
-            raise ValueError("mode must be either 'load_stations' or 'update_weather_hist'")
+        if self.mode not in {"init", "update"}:
+            raise ValueError("mode must be either 'init' or 'update'")
 
         # base
         self.API_BASE_URL = "https://public-api.meteofrance.fr/public/DPClim/v1"  
@@ -351,9 +351,9 @@ class MFScraper():
     def run(self) -> None:
         """Entry point for scraper."""
         engine = create_engine(self.DBSTRING)   
-        if self.mode == "update_weather_hist":
+        if self.mode == "update":
             pass
-        elif self.mode == "load_stations":
+        elif self.mode == "init":
             self._load_stations_metadata(engine=engine,
                                          cadence = self.cadence)
        

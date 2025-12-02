@@ -1,2 +1,3 @@
 from willthisfreeze.scraper.c2c_scraper import C2CScraper
 from willthisfreeze.scraper.meteofrance_scraper import MFScraper
+from willthisfreeze.scraper.weather_stations_attribution import weather_stations_attribution

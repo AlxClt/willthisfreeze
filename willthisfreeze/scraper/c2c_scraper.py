@@ -36,14 +36,14 @@ class C2CScraper:
 
     def __init__(self, 
                  config: dict, 
-                 mode: Optional[Literal["initial_load", "update"]] = None, 
+                 mode: Optional[Literal["init", "update"]] = None, 
                  update_date_start: Optional[datetime.datetime] = None
                  ) -> None:
         
         self.mode = mode or "update"
-
-        if self.mode not in {"initial_load", "update"}:
-            raise ValueError("mode must be either 'initial_load' or 'update'")
+        
+        if self.mode not in {"init", "update"}:
+            raise ValueError("mode must be either 'init' or 'update'")
 
         self.config = config
         self.update_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -52,7 +52,7 @@ class C2CScraper:
         self.parallel: bool = self.mode in config['parallel']
         self.num_processes: int = config.get("num_processes", 1)
 
-        self.scraping_params: Dict[str, Any] = config.get("scraping_parameters", {})
+        self.scraping_params: Dict[str, Any] = config.get("c2c_scraper_parameters", {})
         self.update_date_start = update_date_start
 
     # -----------------------
@@ -315,7 +315,7 @@ class C2CScraper:
     def run(self) -> Dict[str, dict]:
         """Entry point for scraper."""
         engine = create_engine(self.dbstring)   
-        if self.mode == "initial_load":
+        if self.mode == "init":
             # At initial load, the entry point is the route 
             return self._scrape(engine=engine, target='routes')
         elif self.mode == "update":

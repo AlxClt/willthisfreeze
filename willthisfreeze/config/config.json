@@ -1,7 +1,7 @@
 {
     "dbstring": "sqlite+pysqlite:///data/conditions.db",
     "orientations": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
-    "parallel": ["initial_load"],
+    "parallel": ["init"],
     "num_processes": 8,
     "c2c_scraper_parameters": {"base_url": "https://api.camptocamp.org/",
                             "routes_url": "https://api.camptocamp.org/routes",
