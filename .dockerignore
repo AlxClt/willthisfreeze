@@ -1,0 +1,46 @@
+# Ignore the SQLite database (we mount it instead)
+data/conditions.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Local development files
+*.log
+*.sqlite
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Editor settings
+.vscode/
+.idea/
+
+# Docker artifacts
+Dockerfile*
+docker-compose*.yml
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+tmp/
+*.tmp
+
+# Tests (optional — only ignore if you don’t need them in the container)
+# tests/
