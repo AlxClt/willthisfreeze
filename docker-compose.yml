@@ -13,6 +13,18 @@ services:
       # DB_URL: sqlite+pysqlite:///data/conditions.db
     command: ["update"]            # default action
 
+  c2c_scraper_init:
+    build: 
+      context: .
+      dockerfile: dockerfiles/c2c_scraper.dockerfile
+    container_name: c2c_scraper_init_container
+    volumes:
+      - ./data:/app/data          # persistent SQLite storage
+    #environment:
+      # Add your env vars here if needed
+      # DB_URL: sqlite+pysqlite:///data/conditions.db
+    command: ["init"]            # default action
+
   c2c_scraper:
     build: 
       context: .

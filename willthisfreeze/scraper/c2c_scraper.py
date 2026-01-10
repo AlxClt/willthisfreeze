@@ -8,6 +8,7 @@ from typing import Literal, Optional, Set, Dict, List, Any
 
 from tqdm import tqdm
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import create_engine, text, Engine
 
 from willthisfreeze.dbutils import (
@@ -300,7 +301,14 @@ class C2CScraper:
                     if item["skipped"]:
                         skipped += 1
                     else:
-                        self._insert_item(session, item)
+                        try:
+                            self._insert_item(session, item)
+                        except IntegrityError: 
+                            if target=='routes':
+                                logger.warning("Integrity error encountered for route %s",  item["routeId"])
+                            else:
+                                logger.warning("Integrity error encountered for outing %s",  item["outingId"])
+                            session.rollback()
                         written += 1
 
             message[act] = {
