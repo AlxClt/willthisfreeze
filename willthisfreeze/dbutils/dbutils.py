@@ -82,6 +82,7 @@ def get_orientation(session: Session, orientation: str) -> Orientations:
 
 def insert_route(session: Session,
                  routeId: int,
+                 name: str,
                  lat: float | None = None,
                  lon: float | None = None,
                  snow_ice_mixed: int | None = None,
@@ -126,6 +127,7 @@ def insert_route(session: Session,
 
     route = Routes(
         routeId=routeId,
+        name=name,
         lat=lat,
         lon=lon,
         snow_ice_mixed=snow_ice_mixed,

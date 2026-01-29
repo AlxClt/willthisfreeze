@@ -19,7 +19,7 @@ from willthisfreeze.dbutils import (
     check_route_existence, 
     get_last_outing_date
 )
-from willthisfreeze.scraper.utils import C2CApiCallIterator, get_countries_list, get_geo_coordinates
+from willthisfreeze.scraper.utils import C2CApiCallIterator, get_countries_list, get_geo_coordinates, get_title
 
 
 # -----------------------
@@ -53,6 +53,10 @@ class C2CScraper:
         self.parallel: bool = self.mode in config['parallel']
         self.num_processes: int = config.get("num_processes", 1)
 
+        self.debug_mode: bool = config.get("debug_mode", False)
+        if self.debug_mode:
+             logger.info("Scraper started in debug mode - will only scrape a few routes")
+
         self.scraping_params: Dict[str, Any] = config.get("c2c_scraper_parameters", {})
         self.update_date_start = update_date_start
 
@@ -68,7 +72,8 @@ class C2CScraper:
         routes_filter: str = "",
         already_scraped_ids: Optional[Set[int]] = None,
         update_date: str = datetime.datetime.now().strftime("%Y-%m-%d"),
-        force_api_call: bool = False
+        force_api_call: bool = False,
+        get_full_title: bool = True
     ) -> dict:
         """Scrape a single route. Returns dict safe for parallel usage."""
         if already_scraped_ids is None:
@@ -106,6 +111,14 @@ class C2CScraper:
             for outing in outinglist.get("documents", [])
         ]
 
+        # getting the full title requires n additional API call because the associated waypoint is not present in the json returned by the routes api
+        if get_full_title:
+            fullrouteData = requests.get(f"{routes_url}/{routeId}").json()
+            if not isinstance(fullrouteData, dict) or not fullrouteData:
+                raise ValueError("Couldn't scrape full title data for route Id %d", routeId)
+            title = get_title(fullrouteData)
+        else:
+            title = '' # partial title is non informative 
 
         lon, lat = get_geo_coordinates(routeData)
         countries = get_countries_list(routeData)
@@ -113,6 +126,7 @@ class C2CScraper:
 
         route_info = {
             "routeId": routeId,
+            "name": title,
             "lat": lat,
             "lon": lon,
             "snow_ice_mixed": 1 if "snow_ice_mixed" in activities else None,
@@ -215,6 +229,8 @@ class C2CScraper:
         else:
             raise ValueError("target must be either 'outings' or 'routes'")
 
+        logger.info(f"calling C2C API with url {api_url}")
+
         callIterator = C2CApiCallIterator(
             api_call_adress=api_url,
             results_per_page=self.scraping_params.get("num_results_per_page", 100),
@@ -231,9 +247,10 @@ class C2CScraper:
             else:
                 results = [worker_func(doc) for doc in documents]
 
-            #if i > 1: # FOR DEBUGGING, REMOVE
-            #    logger.info("Hard stopping triggered for debugging")
-            #    break
+            if self.debug_mode:
+                if i > 1: 
+                    logger.info("Hard stopping triggered for debugging")
+                    break
             
             final.extend(results)
 

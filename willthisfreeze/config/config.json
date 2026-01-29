@@ -3,6 +3,7 @@
     "orientations": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
     "parallel": ["init"],
     "num_processes": 8,
+    "debug_mode":false,
     "c2c_scraper_parameters": {"base_url": "https://api.camptocamp.org/",
                             "routes_url": "https://api.camptocamp.org/routes",
                             "outings_url": "https://api.camptocamp.org/outings",

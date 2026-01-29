@@ -15,6 +15,7 @@ class Routes(Base):
     __tablename__ = "routes"
 
     routeId=Column(Integer, primary_key=True)
+    name=Column(String, nullable=True)
     lat: Mapped[float]
     lon: Mapped[float]
     snow_ice_mixed=Column(Integer, nullable=True)

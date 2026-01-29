@@ -31,6 +31,7 @@ def filter_langs(lang: dict) -> bool:
         return True
     return False
 
+
 def get_geo_coordinates(routeData: dict) -> tuple:
     geometry = routeData.get("geometry", {}) or {}
     geom = geometry.get("geom")
@@ -62,6 +63,27 @@ def get_countries_list(route: dict) -> List:
         countries.append({"countryId":adm['document_id'], "countryName":name})
     
     return countries
+
+
+def get_title(route: dict) -> str:
+    
+    locales = route.get("locales", {}) or {}
+    locales = list(filter(filter_langs,  locales)) # filter_langs does the right job in this case: keep only the french version
+
+    waypoint = route.get("associations", {}).get("waypoints", [{}])[0].get("locales", [])  #first waypoint should be the main (not always true?)
+    waypoint = list(filter(filter_langs,  waypoint))
+    
+    if (len(waypoint)==0) & (len(locales)==0):
+        return ''
+
+    if len(locales)==0:
+        return waypoint[0].get("title", "")
+    
+    if len(waypoint)==0:
+        return locales[0].get("title", "")
+    
+    return ', '.join([waypoint[0].get("title", ""), locales[0].get("title", "")])
+
 
 def read_config() -> dict:
     
