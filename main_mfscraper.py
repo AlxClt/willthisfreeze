@@ -1,39 +1,47 @@
 import argparse
 import logging
-import sys
 import time
-import datetime as dt
 
 from willthisfreeze.config import read_config, read_secret
 from willthisfreeze.scraper import MFScraper
+from willthisfreeze.config.logging_config import configure_logging, set_log_context
 
-# -----------------------
-# Logging configuration
-# -----------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
-    stream=sys.stdout
-)
-logger = logging.getLogger("MFScraper")
+logger = logging.getLogger(__name__)
 
-
-# -----------------------
-# CLI entrypoint
-# -----------------------
 if __name__ == "__main__":
+    run_id, listener = configure_logging()
+    try:
+        p = argparse.ArgumentParser()
+        p.add_argument(
+            "--mode",
+            required=False,
+            help="scraping mode",
+            choices=["init", "update"],
+            default="update",
+        )
+        args = p.parse_args()
 
-    p = argparse.ArgumentParser()
-    p.add_argument("--mode", required=False, help="scraping mode", choices=["init", "update"], default="update")
-    args = p.parse_args()
+        # Context for all subsequent log lines
+        set_log_context(component="meteofrance", mode=args.mode)
 
-    conf = read_config()
-    secret = read_secret()
-    conf.update(secret)
-    
-    start_time = time.time()
+        logger.info("app.start", extra={"run_id": run_id, "mode": args.mode})
 
-    scraper = MFScraper(config=conf, mode=args.mode)
-    scraper.run()
+        conf = read_config()
+        secret = read_secret()
+        conf.update(secret)
 
-    logger.info("Finished in %.2f seconds", time.time() - start_time)
+        start_time = time.time()
+
+        scraper = MFScraper(config=conf, mode=args.mode)
+        logger.info("scraper.start")
+        scraper.run()
+
+        elapsed = time.time() - start_time
+        logger.info("scraper.done", extra={"duration_s": round(elapsed, 2)})
+        logger.info("app.done")
+
+    except Exception:
+        logger.exception("app.crash")
+        raise
+    finally:
+        listener.stop()

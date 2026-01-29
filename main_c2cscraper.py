@@ -6,40 +6,48 @@ import time
 from willthisfreeze.config import read_config
 from willthisfreeze.scraper import C2CScraper
 from willthisfreeze.dbutils import create_local_db
+from willthisfreeze.config.logging_config import configure_logging, set_log_context
 
-# -----------------------
-# Logging configuration
-# -----------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
-    stream=sys.stdout
-)
-logger = logging.getLogger("Scraper")
-
+logger = logging.getLogger(__name__)
 
 # -----------------------
 # CLI entrypoint
 # -----------------------
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="c2cScraper",
-        description="Scrapes camptocamp.org routes and outings data",
-    )
-    parser.add_argument("mode", choices=["init", "update"])
 
-    args = parser.parse_args()
+    run_id, listener = configure_logging()
+    
+    try:
+        parser = argparse.ArgumentParser(
+            prog="c2cScraper",
+            description="Scrapes camptocamp.org routes and outings data",
+        )
+        parser.add_argument("mode", choices=["init", "update"])
+        args = parser.parse_args()
 
-    conf = read_config()
-    logger.info("Starting scraper in %s mode", args.mode)
-    start_time = time.time()
+        # Context for all log lines from here on
+        set_log_context(component="c2c", mode=args.mode)
 
-    if args.mode=='init':
-        # initial_load can be called without existing db. If db exists, this will have no effect
-        create_local_db()
+        conf = read_config()
+        logger.info("app.start", extra={"run_id": run_id, "mode": args.mode})
 
-    scraper = C2CScraper(mode=args.mode, config=conf)
-    message = scraper.run()
+        start_time = time.time()
 
-    logger.info("Finished in %.2f seconds", time.time() - start_time)
-    logger.info("Summary: %s", message)
+        if args.mode == "init":
+            create_local_db()
+            logger.info("db.init.done")
+
+        scraper = C2CScraper(mode=args.mode, config=conf)
+
+        logger.info("scraper.start")
+        message = scraper.run()
+        elapsed = time.time() - start_time
+
+        logger.info("scraper.done", extra={"duration_s": round(elapsed, 2)})
+        logger.info("scraper.summary", extra={"summary": message})
+
+    except Exception:
+        logger.exception("app.crash")
+        raise
+    finally:
+        listener.stop()

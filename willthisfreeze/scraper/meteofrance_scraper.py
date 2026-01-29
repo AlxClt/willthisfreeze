@@ -17,15 +17,8 @@ from sqlalchemy import create_engine, Engine
 from willthisfreeze.dbutils.dbutils import load_scraped_stations_ids, insert_weather_station
 
 
-# -----------------------
-# Logging configuration
-# -----------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
-    stream=sys.stdout
-)
-logger = logging.getLogger("MFScraper")
+disable_tqdm = not sys.stdout.isatty()
+logger = logging.getLogger(__name__)
 
 
 
@@ -84,7 +77,8 @@ class MFScraper():
                 df = pd.read_csv(f, sep=';')
                 dfs.append(df)
             except Exception as e:
-                logger.warning(f"Warning: failed to read {f}: {e}")
+                #logger.warning(f"Warning: failed to read {f}: {e}")
+                pass
         if not dfs:
             return pd.DataFrame()
         big = pd.concat(dfs, ignore_index=True, sort=False)
@@ -99,11 +93,11 @@ class MFScraper():
             if status_code in [200, 201, 202]:
                 return resp
             elif status_code==429: #rate limit reached
-                logger.info("Rate limit reached, pausing for 1 min...")
+                #logger.info("Rate limit reached, pausing for 1 min...")
                 time.sleep(60)
                 resp = requests.get(url=url, **kwargs)
             elif status_code in [500, 502, 503, 504]:
-                logger.info("Request returned error code %i, sleeping for %i seconds...", status_code, sleep)
+                #logger.info("Request returned error code %i, sleeping for %i seconds...", status_code, sleep)
                 time.sleep(10)
                 resp = requests.get(url=url, **kwargs)
             else:
@@ -148,8 +142,8 @@ class MFScraper():
         j = r.json()
 
         stationsList = []
-        logger.info("Scraping %i stations for department %i", len(j), department)
-        for s in tqdm(j):
+        #logger.info("Scraping %i stations for department %i", len(j), department)
+        for s in tqdm(j, disable=disable_tqdm):
             stationId = s.get('id')
             if (stationId in already_scraped_ids) or not(s.get('posteOuvert')) or (int(stationId)==73187403):
                 stationsList.append({"stationId": stationId, "skipped": True, "stationInfo": {}})
@@ -259,9 +253,9 @@ class MFScraper():
     def download_period(self, station_id: str, start_dt: dt.datetime, end_dt: dt.datetime, cadence: str, out_dir: str) -> str:
         """Place command for the given chunk and download the resulting CSV; returns local filename."""
         order_id = self.place_command(cadence, station_id, start_dt, end_dt)
-        logger.info(f"Placed order {order_id} for {start_dt} -> {end_dt} ({cadence})")
+        #logger.info(f"Placed order {order_id} for {start_dt} -> {end_dt} ({cadence})")
         fname = self.poll_and_download(order_id, out_dir)
-        logger.info(f"Downloaded file to {fname}")
+        #logger.info(f"Downloaded file to {fname}")
         return fname
 
     def scrape_station(self, 
@@ -281,7 +275,7 @@ class MFScraper():
 
         # Build chunks and download each
         chunks = self.chunk_period(start_date, end_date, max_days=max_chunk_days)
-        logger.info(f"Will download {len(chunks)} chunks (max {max_chunk_days} days each).")
+        #logger.info(f"Will download {len(chunks)} chunks (max {max_chunk_days} days each).")
 
         downloaded_files = []
         for sdate, edate in chunks:
@@ -295,14 +289,14 @@ class MFScraper():
                 # small sleep to be polite to API (respect rate limits)
                 time.sleep(1)
             except Exception as e:
-                logger.warning(f"Error for chunk {sdate} -> {edate}: {e}")
+                #logger.warning(f"Error for chunk {sdate} -> {edate}: {e}")
                 # continue to next chunk (partial success is better than failing all)
                 continue
 
         # 3) Combine results
         out_csv = os.path.join(out_dir, f"station_{station}_{start}_to_{end}.csv")
         df = self.combine_csvs(downloaded_files, out_csv)
-        logger.info(f"Combined data saved to {out_csv}. Rows: {len(df)}")
+        #logger.info(f"Combined data saved to {out_csv}. Rows: {len(df)}")
 
     def _load_stations_metadata(self,
                                 engine: Engine,
@@ -314,20 +308,20 @@ class MFScraper():
         already_scraped_stations = load_scraped_stations_ids(engine=engine)
         already_scraped_department = {int(s[:2]) for s in already_scraped_stations}
 
-        logger.info("loaded %i stations from db", len(already_scraped_stations))
-        logger.info("loaded %i scraped departments from db", len(already_scraped_department))
+        #logger.info("loaded %i stations from db", len(already_scraped_stations))
+        #logger.info("loaded %i scraped departments from db", len(already_scraped_department))
 
         scraped_dpt, skipped_dpt = 0, 0
         written, skipped = 0,0
-        logger.info("Scraping weather stations metadata...")
+        #logger.info("Scraping weather stations metadata...")
         for dept in range(1,96):
             if dept in already_scraped_department:
-                logger.info("Skipping department %i", dept)
+                #logger.info("Skipping department %i", dept)
                 skipped_dpt += 1 
             else:
                 stations = self.scrape_stations_metadata(cadence=cadence, department=dept, already_scraped_ids=already_scraped_stations)
                 scraped_dpt += 1
-                logger.info("Writing weather stations metadata in DB...")
+                #logger.info("Writing weather stations metadata in DB...")
                 with Session(engine) as session:
                     for stationInfo in stations:
                         if stationInfo["skipped"]:
@@ -343,7 +337,7 @@ class MFScraper():
             #if dept>=3:
             #    break
         
-        logger.info("Written %i stations for %i departments, skipped %i stations and %i departments", written, scraped_dpt, skipped, skipped_dpt)
+        #logger.info("Written %i stations for %i departments, skipped %i stations and %i departments", written, scraped_dpt, skipped, skipped_dpt)
 
         return
     
