@@ -1,11 +1,12 @@
 import argparse
 import logging
 import sys
+import os
 import time
 
 from willthisfreeze.config import read_config
 from willthisfreeze.scraper import C2CScraper
-from willthisfreeze.dbutils import create_local_db
+from willthisfreeze.dbutils import create_db
 from willthisfreeze.config.logging_config import configure_logging, set_log_context
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,8 @@ if __name__ == "__main__":
         parser.add_argument("mode", choices=["init", "update"])
         args = parser.parse_args()
 
+        dbstring = os.getenv("DATABASE_URL")
+
         # Context for all log lines from here on
         set_log_context(component="c2c", mode=args.mode)
 
@@ -34,10 +37,10 @@ if __name__ == "__main__":
         start_time = time.time()
 
         if args.mode == "init":
-            create_local_db()
+            create_db(dbstring)
             logger.info("db.init.done")
 
-        scraper = C2CScraper(mode=args.mode, config=conf)
+        scraper = C2CScraper(mode=args.mode, dbstring=dbstring, config=conf)
 
         logger.info("scraper.start")
         message = scraper.run()

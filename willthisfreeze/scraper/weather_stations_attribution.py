@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 import time
 from typing import List, Literal
 
@@ -101,8 +102,8 @@ def weather_stations_attribution(mode: Literal["update", "reset"] = "update") ->
     reset: erase all existing links and re-attribute
     """
     t0 = time.time()
-    conf = read_config()
-    engine = get_engine(conf)
+    dbstring = os.getenv("DATABASE_URL")
+    engine = get_engine(dbstring)
 
     logger.info("ws_attr.start", extra={"mode": mode, "disable_tqdm": disable_tqdm})
 

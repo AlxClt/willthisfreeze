@@ -20,22 +20,15 @@ from willthisfreeze.dbutils.schema import (
     WeatherStation,
     StationsParameters)
 
-def get_engine(config: dict) -> Engine:
-    dbstring = config['dbstring']
+def get_engine(dbstring: str) -> Engine:
     engine = create_engine(dbstring)
     return engine
 
-def create_local_db() -> None:
+def create_db(dbstring) -> None:
 
-    config = read_config()
-    dbstring = config['dbstring']
-
-    if database_exists(dbstring):
-        warnings.warn('Database already exist. To recreate it, manually delete the db file before calling create_local_db')
-    else:
-        engine = create_engine(dbstring)
-        Base.metadata.create_all(engine, checkfirst=False)
-        populate_orientation_table(engine)
+    engine = create_engine(dbstring)
+    Base.metadata.create_all(engine, checkfirst=True)
+    populate_orientation_table(engine)
 
 def get_obj(Obj, idColumn: str, session: Session, objData: dict):
 

@@ -3,7 +3,7 @@ import time
 import logging
 import argparse
 
-from willthisfreeze.dbutils import create_local_db
+from willthisfreeze.dbutils import create_db
 from willthisfreeze.config import read_config, read_secret
 from willthisfreeze.scraper import C2CScraper, MFScraper, weather_stations_attribution
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     if args.mode=='init':
         # initial_load can be called without existing db. If db exists, this will have no effect
-        create_local_db()
+        create_db()
 
     start_time = time.time()
 

@@ -1,5 +1,5 @@
 from willthisfreeze.dbutils.dbutils import (
-    create_local_db, 
+    create_db, 
     insert_route, 
     read_config, 
     insert_outing, 

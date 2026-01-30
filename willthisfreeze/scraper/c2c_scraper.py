@@ -130,6 +130,7 @@ class C2CScraper:
     def __init__(
         self,
         config: dict,
+        dbstring: str,
         mode: Optional[Literal["init", "update"]] = None,
         update_date_start: Optional[datetime.datetime] = None,
     ) -> None:
@@ -140,7 +141,7 @@ class C2CScraper:
         self.config = config
         self.update_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-        self.dbstring: str = config["dbstring"]
+        self.dbstring: str = dbstring
         self.parallel: bool = self.mode in config["parallel"]
         self.num_processes: int = config.get("num_processes", 1)
 

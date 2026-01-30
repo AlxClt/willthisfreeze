@@ -45,3 +45,5 @@ tzdata==2025.2
 urllib3==2.5.0
 wcwidth==0.2.14
 yarg==0.1.10
+psycopg2==2.9.11
+psycopg==3.3.2

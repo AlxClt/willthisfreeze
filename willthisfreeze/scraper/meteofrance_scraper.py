@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 class MFScraper():
 
     def __init__(self, 
+                 dbstring: str,
+                 mf_api_token: str,
                  config: dict, 
                  mode: Optional[Literal["init", "update"]] = None):
 
@@ -37,8 +39,8 @@ class MFScraper():
 
         # base
         self.API_BASE_URL = "https://public-api.meteofrance.fr/public/DPClim/v1"  
-        self.API_KEY: str = config["meteoapitoken"]
-        self.DBSTRING: str = config["dbstring"]
+        self.API_KEY: str = mf_api_token
+        self.DBSTRING: str = dbstring
 
         self.HEADERS = {
             "Accept": "application/json",

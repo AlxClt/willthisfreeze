@@ -5,6 +5,8 @@ services:
     build: 
       context: .
       dockerfile: dockerfiles/scraper.dockerfile
+    env_file:
+      - .env.runtime
     container_name: scraper_container
     volumes:
       - ./data:/app/data          # persistent SQLite storage
@@ -18,6 +20,8 @@ services:
       context: .
       dockerfile: dockerfiles/c2c_scraper.dockerfile
     container_name: c2c_scraper_init_container
+    env_file:
+      - .env.runtime
     volumes:
       - ./data:/app/data          # persistent SQLite storage
     #environment:
@@ -30,6 +34,8 @@ services:
       context: .
       dockerfile: dockerfiles/c2c_scraper.dockerfile
     container_name: c2c_scraper_container
+    env_file:
+      - .env.runtime
     volumes:
       - ./data:/app/data          # persistent SQLite storage
     #environment:
@@ -42,6 +48,8 @@ services:
       context: .
       dockerfile: dockerfiles/mf_scraper.dockerfile
     container_name: mf_scraper_container
+    env_file:
+      - .env.runtime
     volumes:
       - ./data:/app/data          # persistent SQLite storage
     #environment:

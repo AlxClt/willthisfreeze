@@ -1,6 +1,7 @@
 import argparse
 import logging
 import time
+import os
 
 from willthisfreeze.config import read_config, read_secret
 from willthisfreeze.scraper import MFScraper
@@ -27,12 +28,13 @@ if __name__ == "__main__":
         logger.info("app.start", extra={"run_id": run_id, "mode": args.mode})
 
         conf = read_config()
-        secret = read_secret()
-        conf.update(secret)
+        
+        mf_api_token = os.getenv("METEOFRANCE_API_TOKEN")
+        dbstring = os.getenv("DATABASE_URL")
 
         start_time = time.time()
 
-        scraper = MFScraper(config=conf, mode=args.mode)
+        scraper = MFScraper(dbstring=dbstring, mf_api_token=mf_api_token, config=conf, mode=args.mode)
         logger.info("scraper.start")
         scraper.run()
 
