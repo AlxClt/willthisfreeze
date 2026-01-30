@@ -168,7 +168,7 @@ class C2CScraper:
     @staticmethod
     def scrape_route(
         routeData: Optional[dict] = None,
-        routeId: Optional[int] = None,
+        route_id: Optional[int] = None,
         routes_url: str = "",
         outings_url: str = "",
         routes_filter: str = "",
@@ -187,34 +187,34 @@ class C2CScraper:
         t0 = time.time()
 
         try:
-            if routeId and routeData is None:
-                r = requests.get(f"{routes_url}/{routeId}", timeout=request_timeout_s)
+            if route_id and routeData is None:
+                r = requests.get(f"{routes_url}/{route_id}", timeout=request_timeout_s)
                 r.raise_for_status()
                 routeData = r.json()
 
             if not isinstance(routeData, dict) or not routeData:
-                raise ValueError("Must provide either routeId or routeData")
+                raise ValueError("Must provide either route_id or routeData")
 
-            routeId = routeData.get("document_id", routeId)
-            if not routeId:
+            route_id = routeData.get("document_id", route_id)
+            if not route_id:
                 raise ValueError("Route ID could not be determined")
 
             if force_api_call:
-                r = requests.get(f"{routes_url}/{routeId}", timeout=request_timeout_s)
+                r = requests.get(f"{routes_url}/{route_id}", timeout=request_timeout_s)
                 r.raise_for_status()
                 routeData = r.json()
                 if not isinstance(routeData, dict) or not routeData:
-                    raise ValueError(f"Couldn't scrape route data for routeId={routeId}")
+                    raise ValueError(f"Couldn't scrape route data for route_id={route_id}")
 
-            if routeId in already_scraped_ids:
-                return {"routeId": routeId, "skipped": True, "routeInfo": {}}
+            if route_id in already_scraped_ids:
+                return {"route_id": route_id, "skipped": True, "routeInfo": {}}
 
-            call_address = f"{outings_url}?{routes_filter}{routeId}"
+            call_address = f"{outings_url}?{routes_filter}{route_id}"
             outingsIterator = C2CApiCallIterator(api_call_adress=call_address, results_per_page=100)
 
             associated_outings = [
                 {
-                    "outingId": outing["document_id"],
+                    "outing_id": outing["document_id"],
                     "date": outing["date_start"],
                     "conditions": outing.get("condition_rating", None),
                     "last_updated": update_date,
@@ -224,11 +224,11 @@ class C2CScraper:
             ]
 
             if get_full_title:
-                r = requests.get(f"{routes_url}/{routeId}", timeout=request_timeout_s)
+                r = requests.get(f"{routes_url}/{route_id}", timeout=request_timeout_s)
                 r.raise_for_status()
                 fullrouteData = r.json()
                 if not isinstance(fullrouteData, dict) or not fullrouteData:
-                    raise ValueError(f"Couldn't scrape full title data for routeId={routeId}")
+                    raise ValueError(f"Couldn't scrape full title data for route_id={route_id}")
                 title = get_title(fullrouteData)
             else:
                 title = ""
@@ -238,7 +238,7 @@ class C2CScraper:
             activities = routeData.get("activities", []) or []
 
             route_info = {
-                "routeId": routeId,
+                "route_id": route_id,
                 "name": title,
                 "lat": lat,
                 "lon": lon,
@@ -261,7 +261,7 @@ class C2CScraper:
             }
 
             return {
-                "routeId": routeId,
+                "route_id": route_id,
                 "skipped": False,
                 "routeInfo": route_info,
                 "duration_ms": int((time.time() - t0) * 1000),
@@ -270,7 +270,7 @@ class C2CScraper:
         except Exception as e:
             # Return error info so parent can log once (cleaner + safer with multiprocessing).
             return {
-                "routeId": routeId,
+                "route_id": route_id,
                 "skipped": False,
                 "routeInfo": {},
                 "error": str(e),
@@ -280,7 +280,7 @@ class C2CScraper:
     @staticmethod
     def scrape_outing(
         outingData: Optional[dict] = None,
-        outingId: Optional[int] = None,
+        outing_id: Optional[int] = None,
         outings_url: str = "",
         already_scraped_ids: Optional[Set[int]] = None,
         update_date: str = datetime.datetime.now().strftime("%Y-%m-%d"),
@@ -291,33 +291,33 @@ class C2CScraper:
         t0 = time.time()
 
         try:
-            if outingId and outingData is None:
-                r = requests.get(f"{outings_url}/{outingId}", timeout=request_timeout_s)
+            if outing_id and outingData is None:
+                r = requests.get(f"{outings_url}/{outing_id}", timeout=request_timeout_s)
                 r.raise_for_status()
                 outingData = r.json()
 
             if not isinstance(outingData, dict) or not outingData:
-                raise ValueError("Must provide either outingId or outingData")
+                raise ValueError("Must provide either outing_id or outingData")
 
-            outingId = outingData.get("document_id", outingId)
-            if not outingId:
+            outing_id = outingData.get("document_id", outing_id)
+            if not outing_id:
                 raise ValueError("Outing ID could not be determined")
 
             if force_api_call:
-                r = requests.get(f"{outings_url}/{outingId}", timeout=request_timeout_s)
+                r = requests.get(f"{outings_url}/{outing_id}", timeout=request_timeout_s)
                 r.raise_for_status()
                 outingData = r.json()
                 if not isinstance(outingData, dict) or not outingData:
-                    raise ValueError(f"Couldn't scrape outing data for outingId={outingId}")
+                    raise ValueError(f"Couldn't scrape outing data for outing_id={outing_id}")
 
-            if outingId in already_scraped_ids:
-                return {"outingId": outingId, "skipped": True, "outingInfo": {}}
+            if outing_id in already_scraped_ids:
+                return {"outing_id": outing_id, "skipped": True, "outingInfo": {}}
 
             routes = outingData.get("associations", {}).get("routes", []) or []
-            routeList = [{"routeId": r["document_id"]} for r in routes]
+            routeList = [{"route_id": r["document_id"]} for r in routes]
 
             outing_info = {
-                "outingId": outingId,
+                "outing_id": outing_id,
                 "date": outingData.get("date_start"),
                 "conditions": outingData.get("condition_rating"),
                 "last_updated": update_date,
@@ -325,7 +325,7 @@ class C2CScraper:
             }
 
             return {
-                "outingId": outingId,
+                "outing_id": outing_id,
                 "skipped": False,
                 "outingInfo": outing_info,
                 "duration_ms": int((time.time() - t0) * 1000),
@@ -333,7 +333,7 @@ class C2CScraper:
 
         except Exception as e:
             return {
-                "outingId": outingId,
+                "outing_id": outing_id,
                 "skipped": False,
                 "outingInfo": {},
                 "error": str(e),
@@ -445,31 +445,31 @@ class C2CScraper:
         return final
 
     def _insert_item(self, session: Session, itemdata: Dict) -> None:
-        if itemdata.get("routeId"):
+        if itemdata.get("route_id"):
             insert_route(session, **itemdata["routeInfo"])
             return
 
-        if itemdata.get("outingId"):
-            outing_id = itemdata["outingId"]
+        if itemdata.get("outing_id"):
+            outing_id = itemdata["outing_id"]
 
             # If scrape returned an error, skip insert (and log once)
             if itemdata.get("error"):
-                logger.error("c2c.item.error", extra={"target": "outing", "outingId": outing_id, "error": itemdata["error"]})
+                logger.error("c2c.item.error", extra={"target": "outing", "outing_id": outing_id, "error": itemdata["error"]})
                 return
 
             outing_not_written = True
             for route in itemdata["outingInfo"]["routes"]:
-                routeId = route["routeId"]
+                route_id = route["route_id"]
                 engine = session.get_bind()
-                exists = check_route_existence(engine=engine, routeId=routeId)
+                exists = check_route_existence(engine=engine, route_id=route_id)
                 if not exists:
                     logger.info(
                         "c2c.route.missing_for_outing",
-                        extra={"routeId": routeId, "outingId": outing_id},
+                        extra={"route_id": route_id, "outing_id": outing_id},
                     )
                     routeData = self.scrape_route(
                         routeData=None,
-                        routeId=routeId,
+                        route_id=route_id,
                         routes_url=self.scraping_params["routes_url"],
                         outings_url=self.scraping_params["outings_url"],
                         routes_filter=self.scraping_params["routes_filter"],
@@ -479,7 +479,7 @@ class C2CScraper:
                     if routeData.get("error"):
                         logger.error(
                             "c2c.item.error",
-                            extra={"target": "route", "routeId": routeId, "error": routeData["error"], "outingId": outing_id},
+                            extra={"target": "route", "route_id": route_id, "error": routeData["error"], "outing_id": outing_id},
                         )
                         continue
                     insert_route(session, **routeData["routeInfo"])
@@ -535,8 +535,8 @@ class C2CScraper:
                             "c2c.db.integrity_error",
                             extra={
                                 "target": target,
-                                "routeId": item.get("routeId"),
-                                "outingId": item.get("outingId"),
+                                "route_id": item.get("route_id"),
+                                "outing_id": item.get("outing_id"),
                             },
                         )
 

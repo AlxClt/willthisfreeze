@@ -59,8 +59,8 @@ def populate_orientation_table(engine) -> None:
     return
 
 get_country = partial(get_obj, Countries, "countryName")
-get_outings = partial(get_obj, Outings, "outingId")
-get_route = partial(get_obj, Routes, "routeId")
+get_outings = partial(get_obj, Outings, "outing_id")
+get_route = partial(get_obj, Routes, "route_id")
 
 def get_orientation(session: Session, orientation: str) -> Orientations:
 
@@ -74,7 +74,7 @@ def get_orientation(session: Session, orientation: str) -> Orientations:
     return orientation_obj
 
 def insert_route(session: Session,
-                 routeId: int,
+                 route_id: int,
                  name: str,
                  lat: float | None = None,
                  lon: float | None = None,
@@ -119,7 +119,7 @@ def insert_route(session: Session,
         stationsList.append(get_weather_station(session, stationData))
 
     route = Routes(
-        routeId=routeId,
+        route_id=route_id,
         name=name,
         lat=lat,
         lon=lon,
@@ -146,7 +146,7 @@ def insert_route(session: Session,
     session.commit()
 
 def insert_outing(session: Session,
-                  outingId: int,
+                  outing_id: int,
                   date: str,
                   conditions: str | None,
                   last_updated: str | None = None,
@@ -163,7 +163,7 @@ def insert_outing(session: Session,
         routesList.append(get_route(session, routeData))
 
     outing = Outings(
-        outingId=outingId,
+        outing_id=outing_id,
         date=date,
         conditions=conditions,
         last_updated=last_updated,
@@ -175,29 +175,29 @@ def insert_outing(session: Session,
 
 def load_scraped_routes_ids(engine: Engine, min_date: Optional[datetime.datetime]) -> Set[int]:
     """Return set of route IDs updated after min_date (or all if None)."""
-    query = "SELECT routeId FROM Routes"
+    query = "SELECT route_id FROM Routes"
     if min_date:
         query += " WHERE last_updated >= :min_date AND last_updated IS NOT NULL"
 
     route_ids: Set[int] = set()
     with engine.connect() as conn:
         result = conn.execute(text(query), {"min_date": min_date.strftime("%Y-%m-%d")} if min_date else {})
-        route_ids = {row.routeId for row in result}
+        route_ids = {row.route_id for row in result}
 
     return route_ids
 
-def load_routes(session: Session, countryId: Optional[int] = None) -> Query:
+def load_routes(session: Session, country_id: Optional[int] = None) -> Query:
     """
     Returns ORM objects for Routes filtered by country Id if provided
     call .all() on the result to retrieve it if you don't need to query it further
     """
-    if not countryId:
+    if not country_id:
         return session.query(Routes)
     
     return (
         session.query(Routes)
         .join(Routes.countries)
-        .filter(Countries.countryId == countryId)
+        .filter(Countries.country_id == country_id)
     )
 
 def load_scraped_outings_ids(engine: Engine, min_date: Optional[datetime.datetime], mode: Literal['update_date', 'outing_date']) -> Set[int]:
@@ -206,7 +206,7 @@ def load_scraped_outings_ids(engine: Engine, min_date: Optional[datetime.datetim
     if mode not in {'update_date', 'outing_date'}:
         raise ValueError("mode must be either 'update_date' or 'outing_date'")
         
-    query = "SELECT outingId FROM Outings"
+    query = "SELECT outing_id FROM Outings"
     if min_date: 
         if mode=='update_date':
             query += " WHERE last_updated >= :min_date AND last_updated IS NOT NULL"
@@ -216,7 +216,7 @@ def load_scraped_outings_ids(engine: Engine, min_date: Optional[datetime.datetim
     outings_ids: Set[int] = set()
     with engine.connect() as conn:
         result = conn.execute(text(query), {"min_date": min_date.strftime("%Y-%m-%d")} if min_date else {})
-        outings_ids = {row.outingId for row in result}
+        outings_ids = {row.outing_id for row in result}
 
     return outings_ids
 
@@ -230,26 +230,26 @@ def get_last_outing_date(engine: Engine) -> datetime.datetime:
         
     return result
 
-def check_route_existence(engine: Engine, routeId: int) -> bool:
+def check_route_existence(engine: Engine, route_id: int) -> bool:
     """Checks whether the route exists in db"""
-    query = "SELECT routeId FROM Routes WHERE routeId == :routeId"
+    query = "SELECT route_id FROM Routes WHERE route_id == :route_id"
 
     with engine.connect() as conn:
-        route = conn.execute(text(query), {"routeId": routeId})
+        route = conn.execute(text(query), {"route_id": route_id})
 
     result = route.first() is not None
 
     return result
 
-def check_outing_existence(engine: Engine, outingId: int) -> bool:
+def check_outing_existence(engine: Engine, outing_id: int) -> bool:
 
     """Checks whether the outing exists in db"""
-    query = "SELECT outingId FROM Outings WHERE outingId == :outingId"
+    query = "SELECT outing_id FROM Outings WHERE outing_id == :outing_id"
 
     outings_ids: Set[int] = set()
     with engine.connect() as conn:
-        result = conn.execute(text(query), {"outingId": outingId})
-        outings_ids = {row.outingId for row in result}
+        result = conn.execute(text(query), {"outing_id": outing_id})
+        outings_ids = {row.outing_id for row in result}
 
     result = (len(outings_ids)>0)
     return result
@@ -258,19 +258,19 @@ def check_outing_existence(engine: Engine, outingId: int) -> bool:
 # Weather data
 # -----------------------
 
-get_weather_station_parameter = partial(get_obj, StationsParameters, "parameterName")
-get_weather_station = partial(get_obj, WeatherStation, "stationId")
+get_weather_station_parameter = partial(get_obj, StationsParameters, "parameter_name")
+get_weather_station = partial(get_obj, WeatherStation, "station_id")
 
 def insert_weather_station(session: Session,
-                           stationId: str,
+                           station_id: str,
                            name: str,
-                           dateStart:datetime.datetime,
-                           dateEnd:datetime.datetime,
+                           date_start:datetime.datetime,
+                           date_end:datetime.datetime,
                            altitude: int,
                            lat: float,
                            lon: float,
-                           lastUpdated:datetime.datetime,
-                           ofInterest: bool = True,
+                           last_updated:datetime.datetime,
+                           of_interest: bool = True,
                            station_parameters: List = [],
                            routes: List = [],
                            commit: bool = True) -> None:
@@ -290,15 +290,15 @@ def insert_weather_station(session: Session,
         stationParamsList.append(get_route(session, routeData))
 
     station = WeatherStation(
-        stationId=stationId,
+        station_id=station_id,
         name=name,
-        dateStart=dateStart,
-        dateEnd=dateEnd,
+        date_start=date_start,
+        date_end=date_end,
         altitude=altitude,
         lat=lat,
         lon=lon,
-        lastUpdated=lastUpdated,
-        ofInterest=ofInterest,
+        last_updated=last_updated,
+        of_interest=of_interest,
         parameters = stationParamsList,
         routes = routesList
      )
@@ -308,9 +308,9 @@ def insert_weather_station(session: Session,
         session.commit()
 
 def insert_weather_station_parameter(session: Session,
-                                     parameterName: str,
-                                     lastUpdated:datetime.datetime,
-                                     parameterId: int | None = None,
+                                     parameter_name: str,
+                                     last_updated:datetime.datetime,
+                                     parameter_id: int | None = None,
                                      stations: List = []
                                      ) -> None:
 
@@ -324,9 +324,9 @@ def insert_weather_station_parameter(session: Session,
         stationsList.append(get_weather_station(session, stationData))
 
     param = StationsParameters(
-        parameterName=parameterName,
-        parameterId=parameterId,
-        lastUpdated=lastUpdated,
+        parameter_name=parameter_name,
+        parameter_id=parameter_id,
+        last_updated=last_updated,
         stations = stationsList
      )
     
@@ -335,12 +335,12 @@ def insert_weather_station_parameter(session: Session,
 
 def load_scraped_stations_ids(engine: Engine) -> Set[str]:
     """Return set of stations IDs already in db."""
-    query = "SELECT stationId FROM weather_stations"
+    query = "SELECT station_id FROM weather_stations"
 
     stations_ids: Set[str] = set()
     with engine.connect() as conn:
         result = conn.execute(text(query))
-        stations_ids = {str(row.stationId) for row in result}
+        stations_ids = {str(row.station_id) for row in result}
 
     return stations_ids
 

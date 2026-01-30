@@ -14,7 +14,7 @@ class Base(DeclarativeBase):
 class Routes(Base):
     __tablename__ = "routes"
 
-    routeId=Column(Integer, primary_key=True)
+    route_id=Column(Integer, primary_key=True)
     name=Column(String, nullable=True)
     lat: Mapped[float]
     lon: Mapped[float]
@@ -49,7 +49,7 @@ class Routes(Base):
         )
     
     def __repr__(self):
-         return f"Route(id={self.routeId}, link=https://www.camptocamp.org/routes/{self.routeId}, count_outings={len(self.outings)})"
+         return f"Route(id={self.route_id}, link=https://www.camptocamp.org/routes/{self.route_id}, count_outings={len(self.outings)})"
 
 
 # From https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#many-to-many:
@@ -58,46 +58,46 @@ class Routes(Base):
 orientation_mapping = Table(
     "orientation_mapping",
     Base.metadata,
-    Column("routeId", ForeignKey("routes.routeId"), primary_key=True),
-    Column("orientationId", ForeignKey("orientations.orientationId"), primary_key=True),
+    Column("route_id", ForeignKey("routes.route_id"), primary_key=True),
+    Column("orientation_id", ForeignKey("orientations.orientation_id"), primary_key=True),
 )
 
 countries_mapping = Table(
     "countries_mapping",
     Base.metadata,
-    Column("routeId", ForeignKey("routes.routeId"), primary_key=True),
-    Column("countryId", ForeignKey("countries.countryId"), primary_key=True),
+    Column("route_id", ForeignKey("routes.route_id"), primary_key=True),
+    Column("country_id", ForeignKey("countries.country_id"), primary_key=True),
 )
 
 outings_mapping = Table(
     "outings_mapping",
     Base.metadata,
-    Column("routeId", ForeignKey("routes.routeId"), primary_key=True),
-    Column("outingId", ForeignKey("outings.outingId"), primary_key=True),
+    Column("route_id", ForeignKey("routes.route_id"), primary_key=True),
+    Column("outing_id", ForeignKey("outings.outing_id"), primary_key=True),
 )
 
 class Countries(Base):
     __tablename__ = "countries"
 
-    countryId=Column(Integer, primary_key=True)
+    country_id=Column(Integer, primary_key=True)
     countryName: Mapped[str] = mapped_column(nullable=True)
 
     def __repr__(self):
-         return f"Country(id={self.countryId}, name={self.countryName})"
+         return f"Country(id={self.country_id}, name={self.countryName})"
 
 class Orientations(Base):
     __tablename__ = "orientations"
 
-    orientationId=Column(Integer, primary_key=True)
+    orientation_id=Column(Integer, primary_key=True)
     orientation: Mapped[str] = mapped_column(unique=True)
 
     def __repr__(self):
-         return f"Orientation(id={self.orientationId}, orientation={self.orientation})"
+         return f"Orientation(id={self.orientation_id}, orientation={self.orientation})"
     
 class Outings(Base):
     __tablename__ = "outings"
 
-    outingId: Mapped[int] = mapped_column(primary_key=True)
+    outing_id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[str] 
     conditions=Column(String, nullable=True) 
     last_updated=Column(String, nullable=True) 
@@ -107,7 +107,7 @@ class Outings(Base):
     )
 
     def __repr__(self):
-         return f"Outing(id={self.outingId}, link=https://www.camptocamp.org/outings/{self.outingId})"
+         return f"Outing(id={self.outing_id}, link=https://www.camptocamp.org/outings/{self.outing_id})"
 
 
 # -----------------------
@@ -118,15 +118,15 @@ class WeatherStation(Base):
 
     __tablename__ = "weather_stations"
 
-    stationId: Mapped[str] = mapped_column(primary_key=True)
+    station_id: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str]
-    dateStart: Mapped[dt.datetime]
-    dateEnd: Mapped[dt.datetime]
+    date_start: Mapped[dt.datetime]
+    date_end: Mapped[dt.datetime]
     altitude: Mapped[int] = mapped_column(nullable=False)
     lat: Mapped[float] = mapped_column(nullable=False)
     lon: Mapped[float] = mapped_column(nullable=False)
-    lastUpdated: Mapped[dt.datetime]
-    ofInterest: Mapped[bool] #Used to flag stations that are worth scraping 
+    last_updated: Mapped[dt.datetime]
+    of_interest: Mapped[bool] #Used to flag stations that are worth scraping 
 
     parameters: Mapped[List["StationsParameters"]] = relationship(
         secondary="stations_parameters_mapping", back_populates='stations'
@@ -136,29 +136,29 @@ class WeatherStation(Base):
     )
 
     def __repr__(self):
-        return f"WeatherStation(id={self.stationId}, name={self.name}, altitude={self.altitude})"
+        return f"WeatherStation(id={self.station_id}, name={self.name}, altitude={self.altitude})"
 
 
 class StationsParameters(Base):
 
     __tablename__ = "stations_parameters"
 
-    parameterId: Mapped[int] = mapped_column(primary_key=True)
-    parameterName: Mapped[str] = mapped_column(nullable=False)
-    lastUpdated: Mapped[dt.datetime]
+    parameter_id: Mapped[int] = mapped_column(primary_key=True)
+    parameter_name: Mapped[str] = mapped_column(nullable=False)
+    last_updated: Mapped[dt.datetime]
 
     stations: Mapped[List["WeatherStation"]] = relationship(
             secondary="stations_parameters_mapping", back_populates='parameters'
         )
 
     def __repr__(self):
-        return f"StationParameter(id={self.parameterId}, name={self.parameterName})"
+        return f"StationParameter(id={self.parameter_id}, name={self.parameter_name})"
 
 stations_parameters_mapping = Table(
     "stations_parameters_mapping",
     Base.metadata,
-    Column("stationId", ForeignKey("weather_stations.stationId"), primary_key=True),
-    Column("parameterId", ForeignKey("stations_parameters.parameterId"), primary_key=True),
+    Column("station_id", ForeignKey("weather_stations.station_id"), primary_key=True),
+    Column("parameter_id", ForeignKey("stations_parameters.parameter_id"), primary_key=True),
 )
 
 # -----------------------
@@ -168,7 +168,7 @@ stations_parameters_mapping = Table(
 route_stations_mapping = Table(
     "route_stations_mapping",
     Base.metadata,
-    Column("stationId", ForeignKey("weather_stations.stationId"), primary_key=True),
-    Column("routeId", ForeignKey("routes.routeId"), primary_key=True),
+    Column("station_id", ForeignKey("weather_stations.station_id"), primary_key=True),
+    Column("route_id", ForeignKey("routes.route_id"), primary_key=True),
 )
 

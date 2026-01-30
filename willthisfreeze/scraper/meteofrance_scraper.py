@@ -146,30 +146,29 @@ class MFScraper():
         stationsList = []
         #logger.info("Scraping %i stations for department %i", len(j), department)
         for s in tqdm(j, disable=disable_tqdm):
-            stationId = s.get('id')
-            if (stationId in already_scraped_ids) or not(s.get('posteOuvert')) or (int(stationId)==73187403):
-                stationsList.append({"stationId": stationId, "skipped": True, "stationInfo": {}})
+            station_id = s.get('id')
+            if (station_id in already_scraped_ids) or not(s.get('posteOuvert')) or (int(station_id)==73187403):
+                stationsList.append({"station_id": station_id, "skipped": True, "stationInfo": {}})
             else:
-                station_details = self.get_station_metadata(station_id=stationId)
+                station_details = self.get_station_metadata(station_id=station_id)
 
                 date_start = station_details.get('dateDebut', '1900-01-01 00:00:00')
                 date_end = station_details.get('dateFin') or ''
-                paramslist = [{'parameterName': p.get('nom'), 'lastUpdated': self.update_date} for p in station_details.get('parametres', [])]
+                paramslist = [{'parameter_name': p.get('nom'), 'last_updated': self.update_date} for p in station_details.get('parametres', [])]
 
                 station_info = {
-                    'stationId': stationId,
+                    'station_id': station_id,
                     'name': s.get('nom'),
                     'lon': float(s.get('lon')),
                     'lat': float(s.get('lat')),
                     'altitude': int(s.get('alt')),
-                    'lastUpdated': dt.datetime.now(),
-                    'dateStart': dt.datetime.strptime(date_start, "%Y-%m-%d %H:%M:%S"),
-                    'dateEnd': dt.datetime.strptime('2100-01-01 00:00:00' if date_end=='' else date_end, "%Y-%m-%d %H:%M:%S"),
-                    'lastUpdated': self.update_date,
+                    'date_start': dt.datetime.strptime(date_start, "%Y-%m-%d %H:%M:%S"),
+                    'date_end': dt.datetime.strptime('2100-01-01 00:00:00' if date_end=='' else date_end, "%Y-%m-%d %H:%M:%S"),
+                    'last_updated': self.update_date,
                     'station_parameters': paramslist
                 }
                 stationsList.append(
-                    {"stationId": stationId, 
+                    {"station_id": station_id, 
                      "skipped": False, 
                      "stationInfo": station_info}
                 )
@@ -327,7 +326,7 @@ class MFScraper():
                 with Session(engine) as session:
                     for stationInfo in stations:
                         if stationInfo["skipped"]:
-                            #logging.info("Skipping station with id %s", stationInfo["stationId"])
+                            #logging.info("Skipping station with id %s", stationInfo["station_id"])
                             skipped+=1
                         else:
                             insert_weather_station(session=session, commit=False, **stationInfo["stationInfo"])

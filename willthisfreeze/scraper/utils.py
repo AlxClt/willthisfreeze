@@ -61,7 +61,7 @@ def get_countries_list(route: dict) -> List:
         name = None
         if len(lang)>0:
             name = lang[0].get('title', None) 
-        countries.append({"countryId":adm['document_id'], "countryName":name})
+        countries.append({"country_id":adm['document_id'], "countryName":name})
     
     return countries
 

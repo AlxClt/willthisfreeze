@@ -30,7 +30,7 @@ def check_routes_for_update(routes: Query) -> Query:
     logger.info("ws_attr.find_routes_missing_stations")
     return (
         routes.outerjoin(Routes.stations)
-        .filter(WeatherStation.stationId.is_(None))
+        .filter(WeatherStation.station_id.is_(None))
     )
 
 
@@ -52,7 +52,7 @@ def filter_stations(route: Routes, stations: List[WeatherStation], nkeep: int = 
     if not stations:
         return []
     return [
-        station.stationId
+        station.station_id
         for station in sorted(
             stations,
             key=lambda s: haversine_distance((route.lat, route.lon), (s.lat, s.lon)),
@@ -66,7 +66,7 @@ def update_routes_station_mapping(session: Session, route: Routes, station_ids: 
         return
     stations = (
         session.query(WeatherStation)
-        .filter(WeatherStation.stationId.in_(station_ids))
+        .filter(WeatherStation.station_id.in_(station_ids))
         .all()
     )
     route.stations = stations
@@ -78,15 +78,15 @@ def update_weather_stations_interest_flag(session: Session) -> None:
     Since default is true, update stations not existing in the relationship table to False.
     """
     orphan_station_ids = (
-        session.query(WeatherStation.stationId)
+        session.query(WeatherStation.station_id)
         .outerjoin(WeatherStation.routes)
-        .filter(Routes.routeId.is_(None))
+        .filter(Routes.route_id.is_(None))
     ).subquery()
 
     updated = (
         session.query(WeatherStation)
-        .filter(WeatherStation.stationId.in_(orphan_station_ids))
-        .update({WeatherStation.ofInterest: False}, synchronize_session=False)
+        .filter(WeatherStation.station_id.in_(orphan_station_ids))
+        .update({WeatherStation.of_interest: False}, synchronize_session=False)
     )
     session.commit()
 
@@ -114,7 +114,7 @@ def weather_stations_attribution(mode: Literal["update", "reset"] = "update") ->
     COMMIT_EVERY = 200  # reduce transaction overhead
 
     with Session(engine) as session:
-        routes_q = load_routes(session, countryId=COUNTRY_ID)
+        routes_q = load_routes(session, country_id=COUNTRY_ID)
 
         if mode == "reset":
             reset_attribution(session)
@@ -124,7 +124,7 @@ def weather_stations_attribution(mode: Literal["update", "reset"] = "update") ->
         routes = routes_q.all()
         logger.info(
             "ws_attr.routes.loaded",
-            extra={"mode": mode, "countryId": COUNTRY_ID, "routes_count": len(routes)},
+            extra={"mode": mode, "country_id": COUNTRY_ID, "routes_count": len(routes)},
         )
 
         processed = 0
