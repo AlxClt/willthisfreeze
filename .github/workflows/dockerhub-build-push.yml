@@ -1,8 +1,6 @@
 name: Build & Push Docker images to Docker Hub
 
 on:
-  #push:
-  #  branches: ["main"]
   workflow_dispatch:
     inputs:
       image:
@@ -19,6 +17,8 @@ on:
         required: true
         default: false
         type: boolean
+    #push:
+    #  branches: ["main"]
 
 env:
   IMAGE_NAMESPACE: willthisfreeze
