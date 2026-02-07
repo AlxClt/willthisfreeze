@@ -1,20 +1,6 @@
 version: "3.9"
 
 services:
-  scraper:
-    build: 
-      context: .
-      dockerfile: dockerfiles/scraper.dockerfile
-    env_file:
-      - .env.runtime
-    container_name: scraper_container
-    volumes:
-      - ./data:/app/data          # persistent SQLite storage
-    #environment:
-      # Add your env vars here if needed
-      # DB_URL: sqlite+pysqlite:///data/conditions.db
-    command: ["update"]            # default action
-
   c2c_scraper_init:
     build: 
       context: .
@@ -24,9 +10,6 @@ services:
       - .env.runtime
     volumes:
       - ./data:/app/data          # persistent SQLite storage
-    #environment:
-      # Add your env vars here if needed
-      # DB_URL: sqlite+pysqlite:///data/conditions.db
     command: ["init"]            # default action
 
   c2c_scraper:
@@ -38,9 +21,6 @@ services:
       - .env.runtime
     volumes:
       - ./data:/app/data          # persistent SQLite storage
-    #environment:
-      # Add your env vars here if needed
-      # DB_URL: sqlite+pysqlite:///data/conditions.db
     command: ["update"]            # default action
 
   mf_scraper:
@@ -52,7 +32,4 @@ services:
       - .env.runtime
     volumes:
       - ./data:/app/data          # persistent SQLite storage
-    #environment:
-      # Add your env vars here if needed
-      # DB_URL: sqlite+pysqlite:///data/conditions.db
     command: ["update_weather_hist"]            # default action

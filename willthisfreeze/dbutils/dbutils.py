@@ -232,7 +232,7 @@ def get_last_outing_date(engine: Engine) -> datetime.datetime:
 
 def check_route_existence(engine: Engine, route_id: int) -> bool:
     """Checks whether the route exists in db"""
-    query = "SELECT route_id FROM Routes WHERE route_id == :route_id"
+    query = "SELECT route_id FROM Routes WHERE route_id = :route_id"
 
     with engine.connect() as conn:
         route = conn.execute(text(query), {"route_id": route_id})
@@ -244,7 +244,7 @@ def check_route_existence(engine: Engine, route_id: int) -> bool:
 def check_outing_existence(engine: Engine, outing_id: int) -> bool:
 
     """Checks whether the outing exists in db"""
-    query = "SELECT outing_id FROM Outings WHERE outing_id == :outing_id"
+    query = "SELECT outing_id FROM Outings WHERE outing_id = :outing_id"
 
     outings_ids: Set[int] = set()
     with engine.connect() as conn:
